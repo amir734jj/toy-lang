@@ -32,7 +32,8 @@ namespace Models
                 InstantiationToken instantiationToken => Visit(instantiationToken),
                 Formal formal => Visit(formal),
                 ClassToken classToken => Visit(classToken),
-                ArmToken armToken => Visit(armToken),
+                TypedArmToken typedArmToken => Visit(typedArmToken),
+                NullArmToken nullArmToken => Visit(nullArmToken),
                 Formals formals => Visit(formals),
                 Tokens tokens => Visit(tokens),
                 Classes classes => Visit(classes),
@@ -65,7 +66,8 @@ namespace Models
         public abstract T Visit(InstantiationToken instantiationToken);
         public abstract T Visit(Formal formal);
         public abstract T Visit(ClassToken classToken);
-        public abstract T Visit(ArmToken armToken);
+        public abstract T Visit(TypedArmToken typedArmToken);
+        public abstract T Visit(NullArmToken nullArmToken);
         public abstract T Visit(Formals formals);
         public abstract T Visit(Tokens tokens);
         public abstract T Visit(Classes classes);

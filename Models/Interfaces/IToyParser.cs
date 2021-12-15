@@ -1,6 +1,4 @@
-using Models;
-
-namespace Core.Interfaces
+namespace Models.Interfaces
 {
     public interface IToyParser
     {

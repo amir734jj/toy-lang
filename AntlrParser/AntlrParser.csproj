@@ -4,4 +4,24 @@
         <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Models\Models.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Antlr4 Include="CoolLexer.g4" />
+        <Antlr4 Include="CoolParser.g4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Antlr4.Runtime.Standard" Version="4.9.3" />
+        <PackageReference Include="Antlr4BuildTasks" Version="8.17.0" PrivateAssets="all" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <NoWarn>1701;1702;3021</NoWarn>
+    </PropertyGroup>
 </Project>

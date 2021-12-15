@@ -69,7 +69,11 @@ namespace Models
 
     public record ClassToken(string Name, Formals Formals, string Inherits, Tokens Actuals, Tokens Features) : Token;
 
-    public record ArmToken(string Name, string Type, Token Result) : Token;
+    public record ArmToken : Token;
+
+    public record TypedArmToken(string Name, string Type, Token Result) : ArmToken;
+    
+    public record NullArmToken(Token Result) : ArmToken;
     
     #endregion
     

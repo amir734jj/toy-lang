@@ -1,3 +1,5 @@
+using Models.Interfaces;
+
 namespace Core.Interfaces
 {
     public interface IToyCompilerParser

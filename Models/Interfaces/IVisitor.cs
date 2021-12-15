@@ -27,7 +27,8 @@ namespace Models.Interfaces
         public T Visit(InstantiationToken instantiationToken);
         public T Visit(Formal formal);
         public T Visit(ClassToken classToken);
-        public T Visit(ArmToken armToken);
+        public T Visit(TypedArmToken armToken);
+        public T Visit(NullArmToken nullArmToken);
         public T Visit(Formals formals);
         public T Visit(Tokens tokens);
         public T Visit(Classes classes);

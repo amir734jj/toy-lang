@@ -145,9 +145,14 @@ namespace JavaScriptCodeGen
                       }}";
         }
 
-        public override string Visit(ArmToken armToken)
+        public override string Visit(TypedArmToken typedArmToken)
         {
-            return $"({armToken.Name} instanceof {armToken.Type}) {{ {Visit(armToken.Result)} }}";
+            return $"({typedArmToken.Name} instanceof {typedArmToken.Type}) {{ {Visit(typedArmToken.Result)} }}";
+        }
+
+        public override string Visit(NullArmToken nullArmToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override string Visit(Formals formals)

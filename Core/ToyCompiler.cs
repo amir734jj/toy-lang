@@ -1,4 +1,5 @@
 ﻿using Core.Interfaces;
+using Models.Interfaces;
 
 namespace Core
 {

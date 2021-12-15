@@ -13,22 +13,27 @@ namespace JavaScriptCodeGen
 
         public override string Visit(AssignToken assignToken)
         {
-            throw new NotImplementedException();
+            return $"{assignToken.Variable} = {Visit(assignToken.Body)}";
         }
 
         public override string Visit(WhileToken whileToken)
         {
-            throw new NotImplementedException();
+            return $@"while ({whileToken.Condition}) {{
+                        {Visit(whileToken.Body)}
+                      }}";
         }
 
         public override string Visit(CondToken condToken)
         {
-            throw new NotImplementedException();
+            return $@"if ({Visit(condToken.Condition)})
+                        {Visit(condToken.IfToken)};
+                      else
+                        {Visit(condToken.ElseToken)}";
         }
 
         public override string Visit(VarDeclToken varDeclToken)
         {
-            throw new NotImplementedException();
+            return $@"var {varDeclToken.Variable} = {Visit(varDeclToken.Body)};";
         }
 
         public override string Visit(FunctionDeclToken functionDeclToken)
@@ -43,7 +48,8 @@ namespace JavaScriptCodeGen
 
         public override string Visit(FunctionCallToken functionCallToken)
         {
-            throw new NotImplementedException();
+            return
+                $"{Visit(functionCallToken.Receiver)}({String.Join(',', functionCallToken.Actuals.Inner.Select(Visit))})";
         }
 
         public override string Visit(NegateToken negateToken)
@@ -120,7 +126,8 @@ namespace JavaScriptCodeGen
 
         public override string Visit(InstantiationToken instantiationToken)
         {
-            return $"new {instantiationToken.Class}({Visit(instantiationToken.Actuals)})";
+            return
+                $"new {instantiationToken.Class}({string.Join(',', instantiationToken.Actuals.Inner.Select(Visit))}))";
         }
 
         public override string Visit(Formal formal)
@@ -130,12 +137,17 @@ namespace JavaScriptCodeGen
 
         public override string Visit(ClassToken classToken)
         {
-            throw new NotImplementedException();
+            return $@"class {classToken.Name} extends {classToken.Inherits ?? "Object"} {{
+                        constructor {Visit(classToken.Formals)} {{
+                            super({string.Join(',', classToken.Actuals.Inner.Select(Visit))});
+                        }}
+                        {string.Join(";\n", Visit(classToken.Features))}
+                      }}";
         }
 
         public override string Visit(ArmToken armToken)
         {
-            return "if ()"
+            return $"({armToken.Name} instanceof {armToken.Type}) {{ {Visit(armToken.Result)} }}";
         }
 
         public override string Visit(Formals formals)
@@ -150,12 +162,12 @@ namespace JavaScriptCodeGen
 
         public override string Visit(Classes classes)
         {
-            throw new NotImplementedException();
+            return string.Join('\n', classes.Inner.Select(Visit));
         }
 
         public override string Visit(Match match)
         {
-            return ""
+            return "";
         }
     }
 }

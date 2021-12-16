@@ -1,6 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
+﻿using System.IO;
+using Core;
+using FParsecParser;
+using JavaScriptCodeGen;
+using Semantics;
 
 namespace ConsoleApp
 {
@@ -8,23 +10,13 @@ namespace ConsoleApp
     {
         static void Main(string[] args)
         {
-            Type[] GetTypesInNamespace(Assembly assembly, string nameSpace)
-            {
-                return 
-                    assembly.GetTypes()
-                        .Where(t => String.Equals(t.Namespace, nameSpace, StringComparison.Ordinal))
-                        .ToArray();
-            }
+            var compiler = new ToyCompiler()
+                .WithParser(new ToyFparsecParser())
+                .WithSemantics(new ToyBasicSemantics())
+                .WithCodeGen(new ToyJavaScriptCodeGen())
+                .Build();
 
-            string better(string amir)
-            {
-                return char.ToLower(amir[0]) + amir.Substring(1);
-            }
-
-            var types = GetTypesInNamespace(Assembly.Load("Models"), "Models");
-            
-            
-            Console.WriteLine(string.Join("\n", types.Select(x => x.Name).Select(x => $"case {x} {better(x)}:\n return Visit({better(x)});")));
+            compiler(File.ReadAllText("basic.toy"));
         }
     }
 }

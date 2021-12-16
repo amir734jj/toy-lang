@@ -38,7 +38,7 @@ namespace AntlrParser
 
         public override Token VisitMany_arm(CoolParser.Many_armContext context)
         {
-            return new Tokens();
+            throw new NotImplementedException();
         }
 
         public override Token VisitActual(CoolParser.ActualContext context)

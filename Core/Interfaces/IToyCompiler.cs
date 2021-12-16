@@ -1,3 +1,4 @@
+using System;
 using Models.Interfaces;
 
 namespace Core.Interfaces
@@ -19,10 +20,6 @@ namespace Core.Interfaces
     
     public interface IToyCompilerBuild
     {
-        public void Build();
-    }
-    
-    public interface IToyCompiler : IToyCompilerParser
-    {
+        public Action<string> Build();
     }
 }

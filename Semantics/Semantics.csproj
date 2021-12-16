@@ -5,8 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\AntlrParser\AntlrParser.csproj" />
-      <ProjectReference Include="..\FParsecParser\FParsecParser.csproj" />
       <ProjectReference Include="..\Models\Models.csproj" />
     </ItemGroup>
 

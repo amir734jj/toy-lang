@@ -45,6 +45,8 @@ namespace AntlrParser
 
             var tree = parser.classes();
             Console.WriteLine(tree.ToStringTree(parser));
+
+            return null;
         }
     }
 }

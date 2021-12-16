@@ -35,7 +35,7 @@ namespace Models
     
     public record BlockToken(Tokens Tokens) : Token;
 
-    public record FunctionCallToken(Token Receiver, Tokens Actuals) : Token;
+    public record FunctionCallToken(string Receiver, Tokens Actuals) : Token;
 
     public record NegateToken(Token Token) : Token;
 
@@ -44,8 +44,12 @@ namespace Models
     public record AddToken(Token Left, Token Right) : Token;
 
     public record EqualsToken(Token Left, Token Right) : Token;
-
+    
     public record NotEqualsToken(Token Left, Token Right) : Token;
+
+    public record AndToken(Token Left, Token Right) : Token;
+    
+    public record OrToken(Token Left, Token Right) : Token;
     
     public record LessThanToken(Token Left, Token Right) : Token;
 
@@ -70,10 +74,12 @@ namespace Models
     public record ClassToken(string Name, Formals Formals, string Inherits, Tokens Actuals, Tokens Features) : Token;
 
     public record ArmToken : Token;
-
+    
     public record TypedArmToken(string Name, string Type, Token Result) : ArmToken;
     
     public record NullArmToken(Token Result) : ArmToken;
+
+    public record Match(Token Token, Arms Inner) : Token;
     
     #endregion
     
@@ -85,7 +91,7 @@ namespace Models
     
     public record Classes(IValueCollection<ClassToken> Inner) : Token;
 
-    public record Match(Token Token, IValueCollection<ArmToken> Inner) : Token;
+    public record Arms(IValueCollection<ArmToken> Inner) : Token;
 
     #endregion
 }

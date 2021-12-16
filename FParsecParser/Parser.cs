@@ -163,7 +163,7 @@ namespace FParsecParser
                 FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
             {
                 // Function call
-                var functionCallP = Variable(expressionRec)
+                var functionCallP = Name()
                     .AndTry(SepBy('(', expressionRec, ')', Skip(','), canBeEmpty: true, canEndWithSep: false))
                     .Label("functionCall")
                     .Map(x => (Token)new FunctionCallToken(x.Item1, new Tokens(x.Item2)));
@@ -206,7 +206,7 @@ namespace FParsecParser
                     .AndLTry(WS)
                     .AndTry(arms)
                     .Label("match")
-                    .Map(x => (Token)new Match(x.Item1, x.Item2.AsValueSemantics()));
+                    .Map(x => (Token)new Match(x.Item1, new Arms(x.Item2.AsValueSemantics())));
 
                 return SkipComments(matchP);
             }

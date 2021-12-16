@@ -1,4 +1,5 @@
-﻿using Core.Interfaces;
+﻿using System;
+using Core.Interfaces;
 using Models.Interfaces;
 
 namespace Core
@@ -20,9 +21,9 @@ namespace Core
             return this;
         }
 
-        public void Build()
+        public Action<string> Build()
         {
-            
+            return s => { };
         }
     }
 }

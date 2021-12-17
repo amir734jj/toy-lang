@@ -3,6 +3,7 @@ using AntlrParser;
 using Core;
 using FParsecParser;
 using JavaScriptCodeGen;
+using Microsoft.Extensions.Logging;
 using Semantics;
 
 namespace ConsoleApp
@@ -11,7 +12,10 @@ namespace ConsoleApp
     {
         static void Main(string[] args)
         {
-            var compiler = new ToyCompiler()
+            var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
+            var logger = loggerFactory.CreateLogger<ToyCompiler>();
+            
+            var compiler = new ToyCompiler(logger)
                 .WithParser(new ToyAntlrParser())
                 .WithSemantics(new ToyBasicSemantics())
                 .WithCodeGen(new ToyJavaScriptCodeGen())

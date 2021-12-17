@@ -1,15 +1,22 @@
 ﻿using System;
 using Core.Interfaces;
+using Microsoft.Extensions.Logging;
 using Models.Interfaces;
 
 namespace Core
 {
     public class ToyCompiler : IToyCompilerParser, IToyCompilerSemantic, IToyCompilerCodeGen, IToyCompilerBuild
     {
+        private readonly ILogger<ToyCompiler> _logger;
         private IToyParser _parser;
         private IToySemantics _semantics;
         private IToyCodeGen _codeGen;
 
+        public ToyCompiler(ILogger<ToyCompiler> logger)
+        {
+            _logger = logger;
+        }
+        
         public IToyCompilerSemantic WithParser(IToyParser parser)
         {
             _parser = parser;
@@ -33,8 +40,11 @@ namespace Core
         {
             return s =>
             {
-                var result = _parser.Parse(s);
-                Console.WriteLine(result);
+                var ast = _parser.Parse(s);
+                _logger.LogInformation("{%s}", ast);
+
+                _semantics.Semant(ast);
+                _codeGen.CodeGen(ast);
             };
         }
     }

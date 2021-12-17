@@ -8,7 +8,8 @@ namespace Semantics
     {
         public void Semant(Classes classes)
         {
-            throw new NotImplementedException();
+            var visitor = new SemanticsVisitor();
+            visitor.Visit(classes);
         }
     }
 }

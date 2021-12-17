@@ -9,7 +9,7 @@ namespace Semantics
     {
         private readonly Unit _unit = new();
 
-        private Contour _contour = new Contour();
+        private Contour _contour = new();
 
         public override Unit Visit(NativeToken nativeToken)
         {

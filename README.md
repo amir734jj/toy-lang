@@ -1,11 +1,9 @@
 # toy-lang
 Toy programming language
 
-Parser:
-- Anlr4
-- FParsec.Sharp
-
-CodeGen:
+Roadmap:
+- ~Anlr4~
+- ~FParsec.Sharp~
 - MIPS
 - JavaScript
 - .NET IL

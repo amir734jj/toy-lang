@@ -8,6 +8,109 @@ namespace AntlrParser
 {
     internal class AstBuilderVisitor : CoolParserBaseVisitor<Token>
     {
+        public override Token VisitClass_nonterminal(CoolParser.Class_nonterminalContext context)
+        {
+            if (context.native_nonterminal() != null)
+            {
+                return new ClassToken(
+                    context.NameToken().First().GetText(),
+                    (Formals)Visit(context.formals()),
+                    "native",
+                    new Tokens(new List<Token>().AsValueSemantics()),
+                    (Tokens)Visit(context.features()));
+            }
+            
+            if (context.NameToken().Length == 2)
+            {
+                return new ClassToken(
+                    context.NameToken().First().GetText(),
+                    (Formals)Visit(context.formals()),
+                    context.NameToken().Last().GetText(),
+                    (Tokens)Visit(context.actuals()),
+                    (Tokens)Visit(context.features()));
+            }
+            
+            if (context.NameToken().Length == 1)
+            {
+                return new ClassToken(
+                    context.NameToken().First().GetText(),
+                    (Formals)Visit(context.formals()),
+                    "Object",
+                    new Tokens(new List<Token>().AsValueSemantics()),
+                    (Tokens)Visit(context.features()));
+            }
+
+            throw new ArgumentException();
+        }
+
+        public override Token VisitFeatures(CoolParser.FeaturesContext context)
+        {
+            return Visit(context.many_features());
+        }
+
+        public override Token VisitNative_nonterminal(CoolParser.Native_nonterminalContext context)
+        {
+            return new NativeToken();
+        }
+
+        public override Token VisitNull_arm(CoolParser.Null_armContext context)
+        {
+            return new NullArmToken(Visit(context.expr()));
+        }
+
+        public override Token VisitMany_features(CoolParser.Many_featuresContext context)
+        {
+            var single = context.feature();
+            var many = context.many_features();
+            
+            // Epsilon
+            if (single is null or { IsEmpty: true } && many is null or { IsEmpty: true })
+            {
+                return new Tokens(new List<Token>().AsValueSemantics());
+            }
+
+            if (many is null or { IsEmpty: true })
+            {
+                return new Tokens(new List<Token> { Visit(single) }.AsValueSemantics());
+            }
+
+            var lhs = (Tokens)Visit(many);
+            var rhs = Visit(single);
+            return new Tokens(lhs.Inner.Concat(new[] { rhs }).AsValueSemantics());
+        }
+
+        public override Token VisitFeature(CoolParser.FeatureContext context)
+        {
+            var functionDecl = context.function_decl();
+            if (functionDecl is { IsEmpty: false})
+            {
+                return Visit(functionDecl);
+            }
+
+            var expr = context.expr();
+            if (expr is { IsEmpty: false})
+            {
+                return Visit(expr);
+            }
+
+            throw new ArgumentException();
+        }
+
+        public override Token VisitClasses(CoolParser.ClassesContext context)
+        {
+            var classes = context.class_nonterminal().Select(Visit).Cast<ClassToken>();
+
+            return new Classes(classes.AsValueSemantics());
+        }
+
+        public override Token VisitTyped_arm(CoolParser.Typed_armContext context)
+        {
+            return new TypedArmToken(
+                context.NameToken().First().GetText(),
+                context.NameToken().Last().GetText(),
+                Visit(context.expr()));
+        }
+
         public override Token VisitExpr(CoolParser.ExprContext context)
         {
             if (context.VarToken() != null)
@@ -40,9 +143,9 @@ namespace AntlrParser
                     Visit(context.expr().Last()));
             }
             
-            if (!context.expr_many().IsEmpty)
+            if (context.expr_many() is { IsEmpty: false })
             {
-                var many = (Tokens)Visit(context.expr().First());
+                var many = (Tokens)Visit(context.expr_many());
                 return new BlockToken(many);
             }
             
@@ -53,7 +156,7 @@ namespace AntlrParser
                     Visit(context.expr().Last()));
             }
             
-            if (context.MinusToken() != null)
+            if (context.MinusToken() != null && context.expr().Length == 1)
             {
                 return new SubtractToken(
                     Visit(context.expr().First()),
@@ -116,7 +219,14 @@ namespace AntlrParser
                     Visit(context.expr().Last()));
             }
             
-            if (!context.actuals().IsEmpty)
+            if (context.DotToken() != null)
+            {
+                return new AccessToken(
+                    Visit(context.expr().First()),
+                    Visit(context.expr().Last()));
+            }
+            
+            if (context.actuals() is { IsEmpty: false})
             {
                 return new FunctionCallToken(
                     context.NameToken().First().GetText(),
@@ -130,14 +240,34 @@ namespace AntlrParser
                     (Arms)Visit(context.arms()));
             }
             
-            if (!context.atomic().IsEmpty)
+            if (context.atomic() is { IsEmpty: false } )
             {
                 return Visit(context.atomic());
             }
             
-            if (!context.native_nonterminal().IsEmpty)
+            if (context.native_nonterminal() is { IsEmpty: false } )
             {
                 return Visit(context.native_nonterminal());
+            }
+
+            if (context.OpenBraceToken() != null && context.CloseBraceToken() !=null)
+            {
+                return Visit(context.expr_many());
+            }
+
+            if (context.NotToken() != null)
+            {
+                return new NotToken(Visit(context.expr().First()));
+            }
+
+            if (context.MinusToken() != null && context.expr().Length == 1)
+            {
+                return new NegateToken(Visit(context.expr().First()));
+            }
+
+            if (context.NameToken().Length == 1 && context.expr().Length == 0)
+            {
+                return new VariableToken(context.NameToken().First().GetText());
             }
             
             return base.VisitExpr(context);
@@ -154,12 +284,12 @@ namespace AntlrParser
             var many = context.many_formal();
             
             // Epsilon
-            if (single.IsEmpty && many.IsEmpty)
+            if (single is null or { IsEmpty: true } && many is null or { IsEmpty: true })
             {
                 return new Formals(new List<Formal>().AsValueSemantics());
             }
 
-            if (many.IsEmpty)
+            if (many is null or { IsEmpty: true })
             {
                 return new Formals(new List<Formal> { (Formal)Visit(single) }.AsValueSemantics());
             }
@@ -179,18 +309,14 @@ namespace AntlrParser
             var typedArm = context.typed_arm();
             var nullArm = context.null_arm();
             
-            if (!typedArm.IsEmpty)
+            if (typedArm is { IsEmpty: false})
             {
-                return new TypedArmToken(
-                    typedArm.NameToken().First().GetText(),
-                    typedArm.NameToken().Last().GetText(),
-                    Visit(typedArm.expr()));
+                return Visit(context.typed_arm());
             }
 
-            if (!nullArm.IsEmpty)
+            if (nullArm is { IsEmpty: false})
             {
-                return new NullArmToken(
-                    Visit(typedArm.expr()));
+                return Visit(context.null_arm());
             }
 
             throw new ArgumentException();
@@ -207,12 +333,12 @@ namespace AntlrParser
             var many = context.many_arm();
             
             // Epsilon
-            if (single.IsEmpty && many.IsEmpty)
+            if (single is null or { IsEmpty: true } && many is null or { IsEmpty: true })
             {
                 return new Arms(new List<ArmToken>().AsValueSemantics());
             }
 
-            if (many.IsEmpty)
+            if (many is null or { IsEmpty: true })
             {
                 return new Arms(new List<ArmToken> { (ArmToken)Visit(single) }.AsValueSemantics());
             }
@@ -225,6 +351,88 @@ namespace AntlrParser
         public override Token VisitActual(CoolParser.ActualContext context)
         {
             return Visit(context.expr());
+        }
+
+        public override Token VisitMany_actual(CoolParser.Many_actualContext context)
+        {
+            var single = context.actual();
+            var many = context.many_actual();
+            
+            // Epsilon
+            if (single is null or { IsEmpty: true } && many is null or { IsEmpty: true })
+            {
+                return new Tokens(new List<Token>().AsValueSemantics());
+            }
+
+            if (many is null or { IsEmpty: true })
+            {
+                return new Tokens(new List<Token> { Visit(single) }.AsValueSemantics());
+            }
+
+            var lhs = (Tokens)Visit(many);
+            var rhs = Visit(single);
+            return new Tokens(lhs.Inner.Concat(new[] { rhs }).AsValueSemantics());
+        }
+
+        public override Token VisitActuals(CoolParser.ActualsContext context)
+        {
+            return Visit(context.many_actual());
+        }
+
+        public override Token VisitFunction_decl(CoolParser.Function_declContext context)
+        {
+            return new FunctionDeclToken(
+                context.OverrideToken() != null,
+                context.NameToken().First().GetText(),
+                (Formals)VisitFormals(context.formals()),
+                context.NameToken().Last().GetText(),
+                Visit(context.expr()));
+        }
+
+        public override Token VisitExpr_many(CoolParser.Expr_manyContext context)
+        {
+            var single = context.expr();
+            var many = context.expr_many();
+            
+            // Epsilon
+            if (single is null or { IsEmpty: true } && many is null or { IsEmpty: true })
+            {
+                return new Tokens(new List<Token>().AsValueSemantics());
+            }
+
+            if (many is null or { IsEmpty: true })
+            {
+                return new Tokens(new List<Token> { Visit(single) }.AsValueSemantics());
+            }
+
+            var lhs = (Tokens)Visit(many);
+            var rhs = Visit(single);
+            return new Tokens(lhs.Inner.Concat(new[] { rhs }).AsValueSemantics());
+        }
+
+        public override Token VisitAtomic(CoolParser.AtomicContext context)
+        {
+            if (context.NullLiteralToken() != null)
+            {
+                return new AtomicToken(null);
+            }
+            
+            if (context.StringLiteralToken() != null)
+            {
+                return new AtomicToken(context.StringLiteralToken().GetText());
+            }
+            
+            if (context.DecimalLiteralToken() != null)
+            {
+                return new AtomicToken(int.Parse(context.DecimalLiteralToken().GetText()));
+            }
+            
+            if (context.BooleanLiteralToken() != null)
+            {
+                return new AtomicToken(bool.Parse(context.BooleanLiteralToken().GetText()));
+            }
+            
+            throw new ArgumentException();
         }
     }
 }

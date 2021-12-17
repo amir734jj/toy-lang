@@ -44,9 +44,9 @@ namespace AntlrParser
             parser.AddErrorListener(listenerParser);
 
             var tree = parser.classes();
-            Console.WriteLine(tree.ToStringTree(parser));
-
-            return null;
+            var visitor = new AstBuilderVisitor();
+            
+            return (Classes)visitor.Visit(tree);
         }
     }
 }

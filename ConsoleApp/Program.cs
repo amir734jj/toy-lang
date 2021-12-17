@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using AntlrParser;
 using Core;
 using FParsecParser;
 using JavaScriptCodeGen;
@@ -11,7 +12,7 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             var compiler = new ToyCompiler()
-                .WithParser(new ToyFparsecParser())
+                .WithParser(new ToyAntlrParser())
                 .WithSemantics(new ToyBasicSemantics())
                 .WithCodeGen(new ToyJavaScriptCodeGen())
                 .Build();

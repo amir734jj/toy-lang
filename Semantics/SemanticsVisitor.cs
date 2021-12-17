@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Models;
 using Semantics.Models;
 
@@ -88,10 +87,6 @@ namespace Semantics
 
         public override Unit Visit(FunctionCallToken functionCallToken)
         {
-            _contour = _contour.Push();
-            Visit(functionCallToken.Receiver);
-            _contour = _contour.Pop();
-            
             _contour = _contour.Push();
             Visit(functionCallToken.Actuals);
             _contour = _contour.Pop();

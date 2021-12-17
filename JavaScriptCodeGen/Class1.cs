@@ -48,8 +48,9 @@ namespace JavaScriptCodeGen
 
         public override string Visit(FunctionCallToken functionCallToken)
         {
-            return
-                $"{Visit(functionCallToken.Receiver)}({String.Join(',', functionCallToken.Actuals.Inner.Select(Visit))})";
+            //return
+            //    $"{Visit(functionCallToken.Receiver)}({String.Join(',', functionCallToken.Actuals.Inner.Select(Visit))})";
+            throw new NotImplementedException();
         }
 
         public override string Visit(NegateToken negateToken)

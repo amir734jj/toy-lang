@@ -16,7 +16,7 @@ namespace ConsoleApp
             var logger = loggerFactory.CreateLogger<ToyCompiler>();
             
             var compiler = new ToyCompiler(logger)
-                .WithParser(new ToyAntlrParser())
+                .WithParser(new ToyFparsecParser())
                 .WithSemantics(new ToyBasicSemantics())
                 .WithCodeGen(new ToyJavaScriptCodeGen())
                 .Build();

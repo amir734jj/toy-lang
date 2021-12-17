@@ -10,6 +10,11 @@ namespace Semantics
         {
             var visitor = new SemanticsVisitor();
             visitor.Visit(classes);
+
+            if (visitor.Errors.Count > 0)
+            {
+                throw new Exception(string.Join(Environment.NewLine, visitor.Errors));
+            }
         }
     }
 }

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Models;
 using Semantics.Models;
 
@@ -10,6 +12,9 @@ namespace Semantics
         private readonly Unit _unit = new();
 
         private Contour _contour = new();
+
+        // ReSharper disable once MemberCanBePrivate.Global
+        public readonly List<string> Errors = new();
 
         public override Unit Visit(NativeToken nativeToken)
         {
@@ -68,6 +73,8 @@ namespace Semantics
 
         public override Unit Visit(FunctionDeclToken functionDeclToken)
         {
+            _contour.Update(functionDeclToken.Name, functionDeclToken);
+            
             _contour = _contour.Push();
             Visit(functionDeclToken.Formals);
             Visit(functionDeclToken.Body);
@@ -223,6 +230,11 @@ namespace Semantics
 
         public override Unit Visit(VariableToken variableToken)
         {
+            if (!_contour.Lookup(variableToken.Variable, out _))
+            {
+                Errors.Add($"Variable {variableToken.Variable} does not exist.");
+            }
+            
             return _unit;
         }
 
@@ -241,6 +253,11 @@ namespace Semantics
 
         public override Unit Visit(InstantiationToken instantiationToken)
         {
+            if (!_contour.Lookup(instantiationToken.Class, out _))
+            {
+                Errors.Add($"Instantiation of {instantiationToken.Class} which does not exist.");
+            }
+            
             _contour = _contour.Push();
             Visit(instantiationToken.Actuals);
             _contour = _contour.Pop();
@@ -257,6 +274,26 @@ namespace Semantics
 
         public override Unit Visit(ClassToken classToken)
         {
+            if (classToken.Name == classToken.Inherits)
+            {
+                Errors.Add($"Class {classToken.Name} extends itself.");
+            }
+
+            if (!_contour.Lookup(classToken.Inherits, out _))
+            {
+                Errors.Add($"Extended class {classToken.Inherits} does not exist.");
+            }
+            
+            _contour.Update(classToken.Name, classToken);
+
+            _contour.Push();
+
+            Visit(classToken.Formals);
+
+            Visit(classToken.Features);
+
+            _contour.Pop();
+
             return _unit;
         }
 

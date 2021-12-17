@@ -33,7 +33,7 @@ namespace Semantics.Models
             if (_parent != null)
             {
                 // ReSharper disable once TailRecursiveCall
-                return Lookup(name, out token);;
+                return _parent.Lookup(name, out token);;
             }
 
             token = null;

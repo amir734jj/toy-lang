@@ -20,7 +20,7 @@ namespace FParsecParser
         public static FSharpFunc<CharStream<Unit>, Reply<string>> Name()
         {
             var invalidChars = new[]
-                { ':', '"', ' ', '{', '}', '=', '(', ')', '\n', ';', ',', '*', '!', '.', '<', '>' };
+                { ':', '"', ' ', '{', '}', '=', '(', ')', '\n', ';', ',', '*', '!', '.', '<', '>', '+', '-', '*', '/' };
             var reservedKeyword = new[]
             {
                 "match", "while", "with", "class", "extends", "if", "else", "case", "def", "null", "var", "new",

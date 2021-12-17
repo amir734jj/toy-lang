@@ -230,7 +230,7 @@ namespace Semantics
 
         public override Unit Visit(VariableToken variableToken)
         {
-            if (!_contour.Lookup(variableToken.Variable, out _))
+            if (variableToken.Variable != "this" && !_contour.Lookup(variableToken.Variable, out _))
             {
                 Errors.Add($"Variable {variableToken.Variable} does not exist.");
             }
@@ -278,8 +278,8 @@ namespace Semantics
             {
                 Errors.Add($"Class {classToken.Name} extends itself.");
             }
-
-            if (!_contour.Lookup(classToken.Inherits, out _))
+            
+            if (classToken.Inherits != "native" && classToken.Inherits != "object" && !_contour.Lookup(classToken.Inherits, out _))
             {
                 Errors.Add($"Extended class {classToken.Inherits} does not exist.");
             }

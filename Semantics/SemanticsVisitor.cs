@@ -346,7 +346,7 @@ namespace Semantics
             _contour = _contour.Pop();
             
             _contour = _contour.Push();
-            Visit(match.Token);
+            Visit(match.Inner);
             _contour = _contour.Pop();
             
             return _unit;

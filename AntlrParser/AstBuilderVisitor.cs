@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Models;
 using Models.Extensions;
+using static Models.Constants;
 
 namespace AntlrParser
 {
@@ -35,7 +36,7 @@ namespace AntlrParser
                 return new ClassToken(
                     context.NameToken().First().GetText(),
                     (Formals)Visit(context.formals()),
-                    "Object",
+                    ROOT_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     (Tokens)Visit(context.features()));
             }

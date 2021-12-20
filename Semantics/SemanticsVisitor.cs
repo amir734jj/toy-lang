@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Models;
 using Semantics.Models;
+using static Models.Constants;
 
 namespace Semantics
 {
@@ -12,6 +14,12 @@ namespace Semantics
         private readonly Unit _unit = new();
 
         private Contour _contour = new();
+
+        private readonly Dictionary<Token, string> _types = new();
+
+        private readonly Dictionary<string, string> _hierarchy = new();
+
+        private readonly string[] _nativeTypes = { "String", "Int", "Boolean", "Unit", "Any", "ArrayAny", "Symbol" };
 
         // ReSharper disable once MemberCanBePrivate.Global
         public readonly List<string> Errors = new();
@@ -25,8 +33,19 @@ namespace Semantics
         {
             _contour = _contour.Push();
             Visit(assignToken.Body);
-            _contour = _contour.Pop();
             
+            if (!_contour.Lookup(assignToken.Variable, out var variableToken))
+            {
+                Errors.Add($"Cannot assign to a variable {assignToken.Variable} that has not be defined yet.");
+            }
+            
+            if (TypeLub(_types[variableToken], _types[assignToken.Body]) != _types[variableToken])
+            {
+                Errors.Add("Type of LHS should be a superset equals of right hand side");
+            }
+            
+            _contour = _contour.Pop();
+
             return _unit;
         }
 
@@ -35,6 +54,11 @@ namespace Semantics
             _contour = _contour.Push();
             Visit(whileToken.Condition);
             _contour = _contour.Pop();
+
+            if (_types[whileToken.Condition] != "Boolean")
+            {
+                Errors.Add("While loop condition should have a type of Boolean.");
+            }
             
             _contour = _contour.Push();
             Visit(whileToken.Body);
@@ -57,6 +81,11 @@ namespace Semantics
             Visit(condToken.ElseToken);
             _contour = _contour.Pop();
             
+            if (_types[condToken.Condition] != "Boolean")
+            {
+                Errors.Add("If condition should have a type of Boolean.");
+            }
+
             return _unit;
         }
 
@@ -64,6 +93,13 @@ namespace Semantics
         {
             _contour = _contour.Push();
             Visit(varDeclToken.Body);
+
+            _types[varDeclToken] = varDeclToken.Type;
+            if (TypeLub(_types[varDeclToken], _types[varDeclToken.Body]) != _types[varDeclToken])
+            {
+                Errors.Add("Type of LHS should be a superset equals of right hand side");
+            }
+            
             _contour = _contour.Pop();
             
             _contour.Update(varDeclToken.Variable, varDeclToken);
@@ -142,6 +178,16 @@ namespace Semantics
             Visit(equalsToken.Right);
             _contour = _contour.Pop();
             
+            if (_types[equalsToken.Left] != "Boolean")
+            {
+                Errors.Add("LHS of equal should have a type of Boolean.");
+            }
+            
+            if (_types[equalsToken.Right] != "Boolean")
+            {
+                Errors.Add("RHS of equal should have a type of Boolean.");
+            }
+            
             return _unit;
         }
 
@@ -154,6 +200,16 @@ namespace Semantics
             _contour = _contour.Push();
             Visit(notEqualsToken.Right);
             _contour = _contour.Pop();
+            
+            if (_types[notEqualsToken.Left] != "Int")
+            {
+                Errors.Add("LHS of not equal should have a type of Boolean.");
+            }
+            
+            if (_types[notEqualsToken.Right] != "Int")
+            {
+                Errors.Add("RHS of not equal should have a type of Boolean.");
+            }
             
             return _unit;
         }
@@ -168,6 +224,16 @@ namespace Semantics
             Visit(lessThanToken.Right);
             _contour = _contour.Pop();
             
+            if (_types[lessThanToken.Left] != "Int")
+            {
+                Errors.Add("LHS of less than should have a type of Int.");
+            }
+            
+            if (_types[lessThanToken.Right] != "Int")
+            {
+                Errors.Add("RHS of less than should have a type of Int.");
+            }
+            
             return _unit;
         }
 
@@ -180,6 +246,16 @@ namespace Semantics
             _contour = _contour.Push();
             Visit(lessThanEqualsToken.Right);
             _contour = _contour.Pop();
+            
+            if (_types[lessThanEqualsToken.Left] != "Int")
+            {
+                Errors.Add("LHS of less than or equal should have a type of Int.");
+            }
+            
+            if (_types[lessThanEqualsToken.Right] != "Int")
+            {
+                Errors.Add("RHS of less than or equal should have a type of Int.");
+            }
             
             return _unit;
         }
@@ -194,6 +270,16 @@ namespace Semantics
             Visit(subtractToken.Right);
             _contour = _contour.Pop();
             
+            if (_types[subtractToken.Left] != "Int")
+            {
+                Errors.Add("LHS of subtract should have a type of Int.");
+            }
+            
+            if (_types[subtractToken.Right] != "Int")
+            {
+                Errors.Add("RHS of subtract should have a type of Int.");
+            }
+            
             return _unit;
         }
 
@@ -207,6 +293,16 @@ namespace Semantics
             Visit(divideToken.Right);
             _contour = _contour.Pop();
             
+            if (_types[divideToken.Left] != "Int")
+            {
+                Errors.Add("LHS of divide should have a type of Int.");
+            }
+            
+            if (_types[divideToken.Right] != "Int")
+            {
+                Errors.Add("RHS of divide should have a type of Int.");
+            }
+            
             return _unit;
         }
 
@@ -219,12 +315,31 @@ namespace Semantics
             _contour = _contour.Push();
             Visit(multiplyToken.Right);
             _contour = _contour.Pop();
+
+            if (_types[multiplyToken.Left] != "Int")
+            {
+                Errors.Add("LHS of multiply should have a type of Int.");
+            }
+            
+            if (_types[multiplyToken.Right] != "Int")
+            {
+                Errors.Add("RHS of multiply should have a type of Int.");
+            }
             
             return _unit;
         }
 
         public override Unit Visit(AtomicToken atomicToken)
         {
+            _types[atomicToken] = atomicToken.Value switch
+            {
+                string _ => "String",
+                int _ => "Int",
+                bool _ => "Boolean",
+                null => ROOT_TYPE,
+                _ => _types[atomicToken]
+            };
+
             return _unit;
         }
 
@@ -278,8 +393,13 @@ namespace Semantics
             {
                 Errors.Add($"Class {classToken.Name} extends itself.");
             }
+
+            if (_nativeTypes.Contains(classToken.Inherits))
+            {
+                Errors.Add($"Class {classToken.Name} cannot extend a native type.");
+            }
             
-            if (classToken.Inherits != "native" && classToken.Inherits != "object" && !_contour.Lookup(classToken.Inherits, out _))
+            if (classToken.Inherits != "native" && classToken.Inherits != ROOT_TYPE && !_contour.Lookup(classToken.Inherits, out _))
             {
                 Errors.Add($"Extended class {classToken.Inherits} does not exist.");
             }
@@ -333,6 +453,11 @@ namespace Semantics
         {
             foreach (var classToken in classes.Inner)
             {
+                _hierarchy.Add(classToken.Name, classToken.Inherits);
+            }
+            
+            foreach (var classToken in classes.Inner)
+            {
                 Visit(classToken);
             }
 
@@ -350,6 +475,31 @@ namespace Semantics
             _contour = _contour.Pop();
             
             return _unit;
+        }
+
+        private List<string> TypePathToRoot(string t)
+        {
+            return _hierarchy.TryGetValue(t, out var parent)
+                ? new List<string> { t }.Concat(TypePathToRoot(parent)).ToList()
+                : new List<string> { ROOT_TYPE };
+        }
+
+        private string TypeLub(string t1, string t2)
+        {
+            if (t1 == t2)
+            {
+                return t2;
+            }
+
+            if (t1 == ROOT_TYPE || t2 == ROOT_TYPE)
+            {
+                return ROOT_TYPE;
+            }
+
+            var p1 = TypePathToRoot(t1);
+            var p2 = TypePathToRoot(t2);
+
+            return p1.First(x => p2.Contains(x));
         }
     }
 }

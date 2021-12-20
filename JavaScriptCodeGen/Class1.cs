@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Models;
+using static Models.Constants;
 
 namespace JavaScriptCodeGen
 {
@@ -138,7 +139,7 @@ namespace JavaScriptCodeGen
 
         public override string Visit(ClassToken classToken)
         {
-            return $@"class {classToken.Name} extends {classToken.Inherits ?? "Object"} {{
+            return $@"class {classToken.Name} extends {(classToken.Inherits == ROOT_TYPE ? "Object" : classToken.Inherits)} {{
                         constructor {Visit(classToken.Formals)} {{
                             super({string.Join(',', classToken.Actuals.Inner.Select(Visit))});
                         }}

@@ -9,6 +9,7 @@ using Models.Extensions;
 using Models.Interfaces;
 using static FParsec.CSharp.PrimitivesCS; // combinator functions
 using static FParsec.CSharp.CharParsersCS; // pre-defined parsers
+using static Models.Constants;
 
 namespace FParsecParser
 {
@@ -363,7 +364,7 @@ namespace FParsecParser
                 .Map(x => new ClassToken(
                     x.Item1.Item1,
                     x.Item1.Item2,
-                    "object",
+                    ROOT_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     new Tokens(x.Item2)
                 ));

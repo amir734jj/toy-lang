@@ -79,7 +79,7 @@ namespace Models
     
     public record NullArmToken(Token Result) : ArmToken;
 
-    public record Match(Token Token, Arms Inner) : Token;
+    public record Match(Token Token, Arms Arms) : Token;
     
     #endregion
     

@@ -13,16 +13,18 @@ namespace Semantics
     {
         private readonly Unit _unit = new();
 
-        private Contour _contour = new();
+        private Contour<string, Token> _variableContour = new("Variable contour");
 
-        private readonly Dictionary<Token, string> _types = new();
+        private Contour<Token, string> _typeContour = new("Type contour");
 
         private readonly Dictionary<string, string> _hierarchy = new();
+
+        private bool _isInsideOfClass = false;
 
         private readonly string[] _nativeTypes = { "String", "Int", "Boolean", "Unit", "Any", "ArrayAny", "Symbol" };
 
         // ReSharper disable once MemberCanBePrivate.Global
-        public readonly List<string> Errors = new();
+        public readonly List<(Token, string)> Errors = new();
 
         public override Unit Visit(NativeToken nativeToken)
         {
@@ -31,57 +33,71 @@ namespace Semantics
 
         public override Unit Visit(AssignToken assignToken)
         {
-            _contour = _contour.Push();
+            // Enter contours
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(assignToken.Body);
             
-            if (!_contour.Lookup(assignToken.Variable, out var variableToken))
+            if (!_variableContour.Lookup(assignToken.Variable, out var variableToken))
             {
-                Errors.Add($"Cannot assign to a variable {assignToken.Variable} that has not be defined yet.");
+                Errors[assignToken] = "Cannot assign to a variable that has not be defined yet.";
             }
-            
-            if (TypeLub(_types[variableToken], _types[assignToken.Body]) != _types[variableToken])
-            {
-                Errors.Add("Type of LHS should be a superset equals of right hand side");
-            }
-            
-            _contour = _contour.Pop();
 
+            if (!_typeContour.Lookup(assignToken.Body, out var exprType))
+            {
+                Errors[assignToken] = "Type of expression is not defined.";
+            }
+
+            if (TypeLub(_typeContour[variableToken], _typeContour[assignToken.Body]) != _typeContour[variableToken])
+            {
+                Errors[assignToken] = "Type of LHS should be a superset equals of right hand side";
+            }
+            
+            // Exit contours
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
             return _unit;
         }
 
         public override Unit Visit(WhileToken whileToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(whileToken.Condition);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
 
-            if (_types[whileToken.Condition] != "Boolean")
+            if (_typeContour[whileToken.Condition] != "Boolean")
             {
                 Errors.Add("While loop condition should have a type of Boolean.");
             }
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(whileToken.Body);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(CondToken condToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(condToken.Condition);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(condToken.IfToken);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(condToken.ElseToken);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            if (_types[condToken.Condition] != "Boolean")
+            if (_typeContour[condToken.Condition] != "Boolean")
             {
                 Errors.Add("If condition should have a type of Boolean.");
             }
@@ -91,99 +107,112 @@ namespace Semantics
 
         public override Unit Visit(VarDeclToken varDeclToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(varDeclToken.Body);
 
-            _types[varDeclToken] = varDeclToken.Type;
-            if (TypeLub(_types[varDeclToken], _types[varDeclToken.Body]) != _types[varDeclToken])
+            _typeContour[varDeclToken] = varDeclToken.Type;
+            if (TypeLub(_typeContour[varDeclToken], _typeContour[varDeclToken.Body]) != _typeContour[varDeclToken])
             {
                 Errors.Add("Type of LHS should be a superset equals of right hand side");
             }
             
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour.Update(varDeclToken.Variable, varDeclToken);
+            _variableContour.Update(varDeclToken.Variable, varDeclToken);
             
             return _unit;
         }
 
         public override Unit Visit(FunctionDeclToken functionDeclToken)
         {
-            _contour.Update(functionDeclToken.Name, functionDeclToken);
+            _variableContour.Update(functionDeclToken.Name, functionDeclToken);
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(functionDeclToken.Formals);
             Visit(functionDeclToken.Body);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(BlockToken blockToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(blockToken.Tokens);
-            _contour = _contour.Pop();
+
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(FunctionCallToken functionCallToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(functionCallToken.Actuals);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(NegateToken negateToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(negateToken.Token);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(NotToken notToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(notToken.Token);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(AddToken addToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(addToken.Left);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(addToken.Right);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(EqualsToken equalsToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(equalsToken.Left);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(equalsToken.Right);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            if (_types[equalsToken.Left] != "Boolean")
+            if (_typeContour[equalsToken.Left] != "Boolean")
             {
                 Errors.Add("LHS of equal should have a type of Boolean.");
             }
             
-            if (_types[equalsToken.Right] != "Boolean")
+            if (_typeContour[equalsToken.Right] != "Boolean")
             {
                 Errors.Add("RHS of equal should have a type of Boolean.");
             }
@@ -193,20 +222,22 @@ namespace Semantics
 
         public override Unit Visit(NotEqualsToken notEqualsToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(notEqualsToken.Left);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(notEqualsToken.Right);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            if (_types[notEqualsToken.Left] != "Int")
+            if (_typeContour.Lookup(notEqualsToken.Left) != "Int")
             {
                 Errors.Add("LHS of not equal should have a type of Boolean.");
             }
             
-            if (_types[notEqualsToken.Right] != "Int")
+            if (_typeContour[notEqualsToken.Right] != "Int")
             {
                 Errors.Add("RHS of not equal should have a type of Boolean.");
             }
@@ -216,20 +247,28 @@ namespace Semantics
 
         public override Unit Visit(LessThanToken lessThanToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(lessThanToken.Left);
-            _contour = _contour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(lessThanToken.Right);
-            _contour = _contour.Pop();
             
-            if (_types[lessThanToken.Left] != "Int")
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            if (_typeContour[lessThanToken.Left] != "Int")
             {
                 Errors.Add("LHS of less than should have a type of Int.");
             }
             
-            if (_types[lessThanToken.Right] != "Int")
+            if (_typeContour[lessThanToken.Right] != "Int")
             {
                 Errors.Add("RHS of less than should have a type of Int.");
             }
@@ -239,20 +278,22 @@ namespace Semantics
 
         public override Unit Visit(LessThanEqualsToken lessThanEqualsToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(lessThanEqualsToken.Left);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(lessThanEqualsToken.Right);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            if (_types[lessThanEqualsToken.Left] != "Int")
+            if (_typeContour[lessThanEqualsToken.Left] != "Int")
             {
                 Errors.Add("LHS of less than or equal should have a type of Int.");
             }
             
-            if (_types[lessThanEqualsToken.Right] != "Int")
+            if (_typeContour[lessThanEqualsToken.Right] != "Int")
             {
                 Errors.Add("RHS of less than or equal should have a type of Int.");
             }
@@ -262,20 +303,22 @@ namespace Semantics
 
         public override Unit Visit(SubtractToken subtractToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(subtractToken.Left);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(subtractToken.Right);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            if (_types[subtractToken.Left] != "Int")
+            if (_typeContour[subtractToken.Left] != "Int")
             {
                 Errors.Add("LHS of subtract should have a type of Int.");
             }
             
-            if (_types[subtractToken.Right] != "Int")
+            if (_typeContour[subtractToken.Right] != "Int")
             {
                 Errors.Add("RHS of subtract should have a type of Int.");
             }
@@ -285,20 +328,48 @@ namespace Semantics
 
         public override Unit Visit(DivideToken divideToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(divideToken.Left);
-            _contour = _contour.Pop();
             
-            _contour = _contour.Push();
+            if (_typeContour.Lookup(divideToken.Left, out var lhsType))
+            {
+                Errors[divideToken] = "Type of LHS is missing.";
+            }
+
+            if (lhsType != "Int")
+            {
+                Errors[Token] = ("LHS of divide should have a type of Int.");
+            }
+            
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(divideToken.Right);
-            _contour = _contour.Pop();
             
-            if (_types[divideToken.Left] != "Int")
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            if (_typeContour.Lookup(divideToken.Left, out var lhsType))
+            {
+                Errors[divideToken] = "Type of LHS is missing.";
+            }
+            
+            if (_typeContour.Lookup(divideToken.Right, out var rhsType))
+            {
+                Errors[divideToken] = "Type of RHS is missing.";
+            }
+            
+            if (lhsType != "Int")
             {
                 Errors.Add("LHS of divide should have a type of Int.");
             }
             
-            if (_types[divideToken.Right] != "Int")
+            if (rhsType != "Int")
             {
                 Errors.Add("RHS of divide should have a type of Int.");
             }
@@ -308,20 +379,22 @@ namespace Semantics
 
         public override Unit Visit(MultiplyToken multiplyToken)
         {
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(multiplyToken.Left);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(multiplyToken.Right);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
 
-            if (_types[multiplyToken.Left] != "Int")
+            if (_typeContour[multiplyToken.Left] != "Int")
             {
                 Errors.Add("LHS of multiply should have a type of Int.");
             }
             
-            if (_types[multiplyToken.Right] != "Int")
+            if (_typeContour[multiplyToken.Right] != "Int")
             {
                 Errors.Add("RHS of multiply should have a type of Int.");
             }
@@ -331,13 +404,13 @@ namespace Semantics
 
         public override Unit Visit(AtomicToken atomicToken)
         {
-            _types[atomicToken] = atomicToken.Value switch
+            _typeContour[atomicToken] = atomicToken.Value switch
             {
                 string _ => "String",
                 int _ => "Int",
                 bool _ => "Boolean",
                 null => ROOT_TYPE,
-                _ => _types[atomicToken]
+                _ => _typeContour[atomicToken]
             };
 
             return _unit;
@@ -345,9 +418,9 @@ namespace Semantics
 
         public override Unit Visit(VariableToken variableToken)
         {
-            if (variableToken.Variable != "this" && !_contour.Lookup(variableToken.Variable, out _))
+            if (_isInsideOfClass && variableToken.Variable != "this" && !_variableContour.Lookup(variableToken.Variable, out _))
             {
-                Errors.Add($"Variable {variableToken.Variable} does not exist.");
+                Errors[variableToken] = "Variable does not exist.";
             }
             
             return _unit;
@@ -355,34 +428,47 @@ namespace Semantics
 
         public override Unit Visit(AccessToken accessToken)
         {
-            _contour = _contour.Push();
-            Visit(accessToken.Receiver);
-            _contour = _contour.Pop();
+            // Enter LHS
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
             
-            _contour = _contour.Push();
+            Visit(accessToken.Receiver);
+            
+            // Exist RHS
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            // Enter RHS
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(accessToken.Variable);
-            _contour = _contour.Pop();
+
+            // Exist LHS
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(InstantiationToken instantiationToken)
         {
-            if (!_contour.Lookup(instantiationToken.Class, out _))
+            if (!_variableContour.Lookup(instantiationToken.Class, out _))
             {
-                Errors.Add($"Instantiation of {instantiationToken.Class} which does not exist.");
+                Errors[instantiationToken] = "Instantiation of class which does not exist.";
             }
             
-            _contour = _contour.Push();
+            _variableContour = _variableContour.Push();
             Visit(instantiationToken.Actuals);
-            _contour = _contour.Pop();
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
             
             return _unit;
         }
 
         public override Unit Visit(Formal formal)
         {
-            _contour.Update(formal.Name, formal);
+            _variableContour.Update(formal.Name, formal);
             
             return _unit;
         }
@@ -391,35 +477,38 @@ namespace Semantics
         {
             if (classToken.Name == classToken.Inherits)
             {
-                Errors.Add($"Class {classToken.Name} extends itself.");
+                Errors.Add((classToken, "Class extends itself."));
             }
 
             if (_nativeTypes.Contains(classToken.Inherits))
             {
-                Errors.Add($"Class {classToken.Name} cannot extend a native type.");
+                Errors.Add((classToken, "Class cannot extend a native type."));
             }
             
-            if (classToken.Inherits != "native" && classToken.Inherits != ROOT_TYPE && !_contour.Lookup(classToken.Inherits, out _))
+            if (classToken.Inherits != "native" && classToken.Inherits != ROOT_TYPE && !_variableContour.Lookup(classToken.Inherits, out _))
             {
-                Errors.Add($"Extended class {classToken.Inherits} does not exist.");
+                Errors.Add((classToken, "Extended class does not exist."));
             }
             
-            _contour.Update(classToken.Name, classToken);
+            _variableContour.Update(classToken.Name, classToken);
 
-            _contour.Push();
+            _isInsideOfClass = true;
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
 
             Visit(classToken.Formals);
-
             Visit(classToken.Features);
 
-            _contour.Pop();
-
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            _isInsideOfClass = false;
+            
             return _unit;
         }
 
         public override Unit Visit(TypedArmToken typedArmToken)
         {
-            _contour.Update(typedArmToken.Name, typedArmToken);
+            _variableContour.Update(typedArmToken.Name, typedArmToken);
             
             return _unit;
         }
@@ -451,11 +540,13 @@ namespace Semantics
 
         public override Unit Visit(Classes classes)
         {
+            // Collect class hierarchy
             foreach (var classToken in classes.Inner)
             {
                 _hierarchy.Add(classToken.Name, classToken.Inherits);
             }
             
+            // Visit classes
             foreach (var classToken in classes.Inner)
             {
                 Visit(classToken);
@@ -466,13 +557,43 @@ namespace Semantics
 
         public override Unit Visit(Match match)
         {
-            _contour = _contour.Push();
-            Visit(match.Token);
-            _contour = _contour.Pop();
+            // Enter expression contour
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
             
-            _contour = _contour.Push();
-            Visit(match.Inner);
-            _contour = _contour.Pop();
+            Visit(match.Token);
+
+            if (!_typeContour.Lookup(match.Token, out var exprType))
+            {
+                Errors.Add((match, "Expression type is not defined"));
+            }
+            
+            // Exist expression contour
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            // Enter arms contour
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
+            Visit(match.Arms);
+            
+            var armsType = match.Arms.Inner.Select(arm =>
+            {
+                if (!_typeContour.Lookup(arm, out var armType))
+                {
+                    Errors.Add((arm, "Type of arm did not exist."));
+                }
+
+                return armType;
+            }).Aggregate(TypeLub);
+
+            // Exist arms contour
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            // Set match type
+            _typeContour.Update(match, armsType);
             
             return _unit;
         }

@@ -1,28 +1,33 @@
 using System.Collections.Generic;
-using Models;
 
 namespace Semantics.Models
 {
-    internal class Contour
+    internal class Contour<TKey, TValue>
     {
-        private readonly IDictionary<string, Token> _table = new Dictionary<string, Token>();
+        public string Name { get; }
+        
+        private readonly IDictionary<TKey, TValue> _table = new Dictionary<TKey, TValue>();
+        private Contour<TKey, TValue> _parent;
 
-        private Contour _parent;
-
-        public Contour Push()
+        public Contour(string name)
         {
-            return new Contour
+            Name = name;
+        }
+
+        public Contour<TKey, TValue> Push()
+        {
+            return new Contour<TKey, TValue>(Name)
             {
                 _parent = this
             };
         }
 
-        public void Update(string name, Token token)
+        public void Update(TKey name, TValue token)
         {
             _table[name] = token;
         }
         
-        public bool Lookup(string name, out Token token)
+        public bool Lookup(TKey name, out TValue token)
         {
             if (_table.ContainsKey(name))
             {
@@ -36,11 +41,11 @@ namespace Semantics.Models
                 return _parent.Lookup(name, out token);;
             }
 
-            token = null;
+            token = default;
             return false;
         }
 
-        public Contour Pop()
+        public Contour<TKey, TValue> Pop()
         {
             return _parent;
         }

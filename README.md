@@ -1,10 +1,10 @@
 # toy-lang
 Toy programming language
 
-Roadmap:
+TODO:
 - ~Anlr4~
 - ~FParsec.Sharp~
-- Semantics
+- ~Semantics~
 - MIPS
 - JavaScript
 - .NET IL

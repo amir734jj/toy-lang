@@ -44,7 +44,7 @@ namespace Core
                 //_logger.LogInformation("{%s}", ast);
 
                 _semantics.Semant(ast);
-                _codeGen.CodeGen(ast);
+                // _codeGen.CodeGen(ast);
             };
         }
     }

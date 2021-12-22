@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Models;
-using Semantics.Models;
 
-namespace Semantics
+namespace Semantics.Models
 {
     public class SemanticErrors
     {

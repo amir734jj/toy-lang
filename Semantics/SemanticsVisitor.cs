@@ -15,9 +15,11 @@ namespace Semantics
 
         private readonly Dictionary<string, string> _hierarchy = new();
 
-        private ClassToken _isInsideOfClass = null;
+        private ClassToken _isInsideOfClass;
 
         private readonly string[] _basicTypes = { "String", "Int", "Boolean", "Unit", "Any", "ArrayAny", "Symbol" };
+
+        private readonly Dictionary<string, IReadOnlyCollection<FunctionDeclToken>> _methods = new();
 
         // ReSharper disable once MemberCanBePrivate.Global
         public readonly SemanticErrors Semantics = new();
@@ -276,27 +278,51 @@ namespace Semantics
 
             Visit(functionCallToken.Actuals);
 
-            // Exist function call actuals contour
-            _variableContour = _variableContour.Pop();
-            _typeContour = _typeContour.Pop();
-
             // Make sure function decl is actually defined
-            if (!_variableContour.Lookup(functionCallToken.Receiver, out var functionDecl))
+            if (!_variableContour.Lookup(functionCallToken.Name, out var functionDeclUntyped))
             {
                 return Semantics.Error(functionCallToken, "Function is not defined and cannot be invoked.");
             }
 
             // Make sure variable being invoked is actually function decl
-            if (functionDecl is not FunctionDeclToken)
+            if (functionDeclUntyped is not FunctionDeclToken functionDeclToken)
             {
                 return Semantics.Error(functionCallToken, "Can only invoke a function call.");
             }
 
             // Make sure type of function decl is defined
-            if (!_typeContour.Lookup(functionDecl, out var functionType))
+            if (!_typeContour.Lookup(functionDeclToken, out var functionType))
             {
                 return Semantics.Error(functionCallToken, "Cannot find the type of function decl.");
             }
+
+            // Make sure count of formals and actuals are equal
+            if (functionCallToken.Actuals.Inner.Count != functionDeclToken.Formals.Inner.Count)
+            {
+                return Semantics.Error(functionCallToken, "Count of formals and actuals do not match");
+            }
+
+            for (var index = 0; index < functionCallToken.Actuals.Inner.Count; index++)
+            {
+                var formal = functionDeclToken.Formals.Inner[index];
+                var actual = functionCallToken.Actuals.Inner[index];
+                
+                // Make sure type of actual exist
+                if (!_typeContour.Lookup(actual, out var actualType))
+                {
+                    return Semantics.Error(functionCallToken, "Type of actual is not defined in function call.");
+                }
+
+                // Make sure type of actual is superset of formal
+                if (TypeLub(actualType, formal.Type) != formal.Type)
+                {
+                    return Semantics.Error(functionCallToken, "Type of actual should be superset of formal in function call.");
+                }
+            }
+
+            // Exist function call actuals contour
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
 
             // Type of function call is the static type of function decl
             _typeContour.Update(functionCallToken, functionType);
@@ -360,25 +386,48 @@ namespace Semantics
 
         public override Unit Visit(AddToken addToken)
         {
-            // Enter add LHS contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
             Visit(addToken.Left);
 
-            // Exit add LHS contour
+            // Make sure type of LHS is defined
+            if (!_typeContour.Lookup(addToken.Left, out var lhsType))
+            {
+                return Semantics.Error(addToken, "Type of LHS expression is not defined.");
+            }
+
+            // Make sure type of LHS is integer
+            if (lhsType != INTEGER_TYPE)
+            {
+                return Semantics.Error(addToken, "Type of LHS should be integer.");
+            }
+
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
 
-            // Enter add RHS contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
             Visit(addToken.Right);
 
-            // Exist add RHS contour
+            // Make sure type of RHS is defined
+            if (!_typeContour.Lookup(addToken.Right, out var rhsType))
+            {
+                return Semantics.Error(addToken, "Type of RHS expression is not defined.");
+            }
+
+            // Make sure type of LHS is integer
+            if (rhsType != INTEGER_TYPE)
+            {
+                return Semantics.Error(addToken, "Type of RHS should be integer.");
+            }
+
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
+
+            // Export type as integer
+            _typeContour.Update(addToken, INTEGER_TYPE);
 
             return Unit.Instance;
         }
@@ -451,9 +500,9 @@ namespace Semantics
             }
 
             // Make sure type of LHS is integer
-            if (lhsType != BOOLEAN_TYPE)
+            if (lhsType != INTEGER_TYPE)
             {
-                return Semantics.Error(lessThanToken, "Type of LHS should be boolean.");
+                return Semantics.Error(lessThanToken, "Type of LHS should be integer.");
             }
 
             _variableContour = _variableContour.Pop();
@@ -465,15 +514,15 @@ namespace Semantics
             Visit(lessThanToken.Right);
 
             // Make sure type of RHS is defined
-            if (!_typeContour.Lookup(lessThanToken.Left, out var rhsType))
+            if (!_typeContour.Lookup(lessThanToken.Right, out var rhsType))
             {
                 return Semantics.Error(lessThanToken, "Type of RHS expression is not defined.");
             }
 
             // Make sure type of LHS is integer
-            if (lhsType != BOOLEAN_TYPE)
+            if (rhsType != INTEGER_TYPE)
             {
-                return Semantics.Error(lessThanToken, "Type of RHS should be boolean.");
+                return Semantics.Error(lessThanToken, "Type of RHS should be integer.");
             }
 
             _variableContour = _variableContour.Pop();
@@ -499,9 +548,9 @@ namespace Semantics
             }
 
             // Make sure type of LHS is integer
-            if (lhsType != BOOLEAN_TYPE)
+            if (lhsType != INTEGER_TYPE)
             {
-                return Semantics.Error(lessThanEqualsToken, "Type of LHS should be boolean.");
+                return Semantics.Error(lessThanEqualsToken, "Type of LHS should be integer.");
             }
 
             _variableContour = _variableContour.Pop();
@@ -513,15 +562,15 @@ namespace Semantics
             Visit(lessThanEqualsToken.Right);
 
             // Make sure type of RHS is defined
-            if (!_typeContour.Lookup(lessThanEqualsToken.Left, out var rhsType))
+            if (!_typeContour.Lookup(lessThanEqualsToken.Right, out var rhsType))
             {
                 return Semantics.Error(lessThanEqualsToken, "Type of RHS expression is not defined.");
             }
 
             // Make sure type of LHS is integer
-            if (lhsType != BOOLEAN_TYPE)
+            if (rhsType != INTEGER_TYPE)
             {
-                return Semantics.Error(lessThanEqualsToken, "Type of RHS should be boolean.");
+                return Semantics.Error(lessThanEqualsToken, "Type of RHS should be integer.");
             }
 
             _variableContour = _variableContour.Pop();
@@ -561,13 +610,13 @@ namespace Semantics
             Visit(subtractToken.Right);
 
             // Make sure type of RHS is defined
-            if (!_typeContour.Lookup(subtractToken.Left, out var rhsType))
+            if (!_typeContour.Lookup(subtractToken.Right, out var rhsType))
             {
                 return Semantics.Error(subtractToken, "Type of RHS expression is not defined.");
             }
 
             // Make sure type of LHS is integer
-            if (lhsType != INTEGER_TYPE)
+            if (rhsType != INTEGER_TYPE)
             {
                 return Semantics.Error(subtractToken, "Type of RHS should be integer.");
             }
@@ -609,13 +658,13 @@ namespace Semantics
             Visit(divideToken.Right);
 
             // Make sure type of RHS is defined
-            if (!_typeContour.Lookup(divideToken.Left, out var rhsType))
+            if (!_typeContour.Lookup(divideToken.Right, out var rhsType))
             {
                 return Semantics.Error(divideToken, "Type of RHS expression is not defined.");
             }
 
             // Make sure type of LHS is integer
-            if (lhsType != INTEGER_TYPE)
+            if (rhsType != INTEGER_TYPE)
             {
                 return Semantics.Error(divideToken, "Type of RHS should be integer.");
             }
@@ -657,13 +706,13 @@ namespace Semantics
             Visit(multiplyToken.Right);
 
             // Make sure type of RHS is defined
-            if (!_typeContour.Lookup(multiplyToken.Left, out var rhsType))
+            if (!_typeContour.Lookup(multiplyToken.Right, out var rhsType))
             {
                 return Semantics.Error(multiplyToken, "Type of RHS expression is not defined.");
             }
 
             // Make sure type of LHS is integer
-            if (lhsType != INTEGER_TYPE)
+            if (rhsType != INTEGER_TYPE)
             {
                 return Semantics.Error(multiplyToken, "Type of RHS should be integer.");
             }
@@ -711,6 +760,7 @@ namespace Semantics
                 return Semantics.Error(variableToken, "Reference token of variable has no type.");
             }
             
+            // Type of variable is the type of decl
             _typeContour.Update(variableToken, refTokenType);
 
             return Unit.Instance;
@@ -724,6 +774,11 @@ namespace Semantics
 
             Visit(accessToken.Receiver);
 
+            if (!_typeContour.Lookup(accessToken.Receiver, out var receiverType))
+            {
+                Semantics.Error(accessToken, "Type of receiver is undefined.");
+            }
+
             // Exist RHS
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
@@ -732,29 +787,76 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
+            // Set the contour of access expression
+            foreach (var functionDeclToken in _methods[receiverType])
+            {
+                _variableContour.Update(functionDeclToken.Name, functionDeclToken);
+                _typeContour.Update(functionDeclToken, functionDeclToken.Type);
+            }
+
             Visit(accessToken.Variable);
+
+            if (!_typeContour.Lookup(accessToken.Variable, out var variableType))
+            {
+                return Semantics.Error(accessToken, "Type of variable is not defined.");
+            }
 
             // Exist LHS
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
+            
+            // Type of access is the type of variable
+            _typeContour.Update(accessToken, variableType);
 
             return Unit.Instance;
         }
 
         public override Unit Visit(InstantiationToken instantiationToken)
         {
-            if (!_variableContour.Lookup(instantiationToken.Class, out _))
+            if (!_variableContour.Lookup(instantiationToken.Class, out var classDeclUntyped))
             {
                 return Semantics.Error(instantiationToken, "Instantiation of class which does not exist.");
+            }
+
+            if (classDeclUntyped is not ClassToken classDecl)
+            {
+                return Semantics.Error(instantiationToken, "Instantiation of class is only allowed.");
             }
 
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
             Visit(instantiationToken.Actuals);
+            
+            // Make sure count of formals and actuals are equal
+            if (instantiationToken.Actuals.Inner.Count != classDecl.Formals.Inner.Count)
+            {
+                return Semantics.Error(instantiationToken, "Count of formals and actuals do not match.");
+            }
+
+            for (var index = 0; index < instantiationToken.Actuals.Inner.Count; index++)
+            {
+                var formal = classDecl.Formals.Inner[index];
+                var actual = instantiationToken.Actuals.Inner[index];
+                
+                // Make sure type of actual exist
+                if (!_typeContour.Lookup(actual, out var actualType))
+                {
+                    return Semantics.Error(instantiationToken, "Type of actual is not defined in new.");
+                }
+
+                // Make sure type actual is superset of formal
+                if (TypeLub(actualType, formal.Type) != formal.Type)
+                {
+                    return Semantics.Error(instantiationToken, "Type of actual should be superset of formal in new.");
+                }
+            }
 
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
+            
+            // Type of new is the type of class
+            _typeContour.Update(instantiationToken, instantiationToken.Class);
 
             return Unit.Instance;
         }
@@ -800,10 +902,44 @@ namespace Semantics
             }
 
             // Make sure class being extended actually exist
-            if (classToken.Inherits != "native" && classToken.Inherits != ROOT_TYPE &&
-                !_variableContour.Lookup(classToken.Inherits, out _))
+            if (classToken.Inherits != "native" && classToken.Inherits != NO_TYPE)
             {
-                return Semantics.Error(classToken, "Extended class does not exist.");
+                // Make sure extending class has been declared
+                if (!_variableContour.Lookup(classToken.Inherits, out var extendingClassUntyped))
+                {
+                    return Semantics.Error(classToken, "Extended class does not exist.");
+                }
+
+                // Make sure extending class decl
+                if (extendingClassUntyped is not ClassToken extendingClass)
+                {
+                    return Semantics.Error(classToken, "Can only extend a class decl.");
+                }
+                
+                // Make sure count of formals and actuals are equal
+                if (classToken.Actuals.Inner.Count != extendingClass.Formals.Inner.Count)
+                {
+                    return Semantics.Error(classToken, "Count of formals and actuals do not match.");
+                }
+
+                for (var index = 0; index < classToken.Actuals.Inner.Count; index++)
+                {
+                    var formal = extendingClass.Formals.Inner[index];
+                    var actual = classToken.Actuals.Inner[index];
+                    
+                    // Make sure type of actual exist
+                    if (!_typeContour.Lookup(actual, out var actualType))
+                    {
+                        return Semantics.Error(classToken, "Type of actual is not defined in class.");
+                    }
+
+                    // Make sure type actual is superset of formal
+                    if (TypeLub(actualType, formal.Type) != formal.Type)
+                    {
+                        return Semantics.Error(classToken,
+                            "Type of actual should be superset of formal in class.");
+                    }
+                }
             }
 
             _isInsideOfClass = classToken;
@@ -834,8 +970,7 @@ namespace Semantics
             _variableContour.Update(typedArmToken.Name, typedArmToken);
 
             Visit(typedArmToken.Result);
-
-
+            
             // Make sure type used in typed arm branch actually exist
             if (!_variableContour.Lookup(typedArmToken.Type, out var classToken))
             {
@@ -847,12 +982,18 @@ namespace Semantics
             {
                 return Semantics.Error(typedArmToken, "Type should be a class declaration.");
             }
+            
+            // Make sure dynamic type of arm exist
+            if (!_typeContour.Lookup(typedArmToken.Result, out var typeOfArm))
+            {
+                return Semantics.Error(typedArmToken, "Type of branch arm did not exist.");
+            }
 
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
 
             // Type of typed arm branch is static type
-            _typeContour.Update(typedArmToken, typedArmToken.Type);
+            _typeContour.Update(typedArmToken, typeOfArm);
 
             return Unit.Instance;
         }
@@ -896,7 +1037,12 @@ namespace Semantics
                 {
                     return Semantics.Error(classToken, "Duplicate class name is not allowed.");
                 }
-                
+
+                _methods[classToken.Name] = classToken.Features.Inner.Where(x => x is FunctionDeclToken)
+                    .Cast<FunctionDeclToken>()
+                    .ToList()
+                    .AsReadOnly();
+
                 _variableContour.Update(classToken.Name, classToken);
                 _typeContour.Update(classToken, ROOT_TYPE);
             }
@@ -918,7 +1064,7 @@ namespace Semantics
 
             Visit(match.Token);
 
-            if (!_typeContour.Lookup(match.Token, out _))
+            if (!_typeContour.Lookup(match.Token, out var expressionType))
             {
                 return Semantics.Error(match, "Expression type is not defined.");
             }
@@ -940,11 +1086,20 @@ namespace Semantics
                 {
                     return Semantics.Error(armToken, "Type of arm did not exist.");
                 }
-                
+
                 armTypes.Add(armType);
             }
             
+            // Type of match is lub of all arms
             var armsType = armTypes.Aggregate(TypeLub);
+            
+            foreach (var armToken in match.Arms.Inner)
+            {
+                if (armToken is TypedArmToken typedArmToken && TypeLub(typedArmToken.Type, expressionType) != typedArmToken.Type)
+                {
+                    return Semantics.Error(armToken, "Typed arm branch should narrow down the expression not broaden it.");
+                }
+            }
 
             // Exist arms contour
             _variableContour = _variableContour.Pop();

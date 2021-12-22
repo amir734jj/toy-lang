@@ -366,7 +366,7 @@ namespace FParsecParser
                 .Map(x => new ClassToken(
                     x.Item1.Item1,
                     x.Item1.Item2,
-                    ROOT_TYPE,
+                    NO_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     new Tokens(x.Item2)
                 ));

@@ -35,7 +35,7 @@ namespace Models
     
     public record BlockToken(Tokens Tokens) : Token;
 
-    public record FunctionCallToken(string Receiver, Tokens Actuals) : Token;
+    public record FunctionCallToken(string Name, Tokens Actuals) : Token;
 
     public record NegateToken(Token Token) : Token;
 

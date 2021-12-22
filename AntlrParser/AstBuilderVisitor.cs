@@ -36,7 +36,7 @@ namespace AntlrParser
                 return new ClassToken(
                     context.NameToken().First().GetText(),
                     (Formals)Visit(context.formals()),
-                    ROOT_TYPE,
+                    NO_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     (Tokens)Visit(context.features()));
             }

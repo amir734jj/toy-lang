@@ -5,7 +5,9 @@ namespace Models
     {
         public const byte UNIT_SYMBOL = 0xff;
 
-        public const string ROOT_TYPE = nameof(ROOT_TYPE);
+        public const string NO_TYPE = null;
+        
+        public const string ROOT_TYPE = "Any";
 
         public const string BOOLEAN_TYPE = "Boolean";
 

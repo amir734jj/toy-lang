@@ -214,20 +214,23 @@ namespace FParsecParser
                 return SkipComments(matchP);
             }
 
+            // Source: https://en.wikipedia.org/wiki/Order_of_operations#Programming_languages
             var expressionP = new OPPBuilder<Unit, Token, Unit>()
                 .WithOperators(ops => ops
-                    .AddPrefix("-", 5, WS, token => new NegateToken(token))
-                    .AddPrefix("!", 5, WS, token => new NotToken(token))
-                    .AddInfix("+", 10, WS, (x, y) => new AddToken(x, y))
-                    .AddInfix("-", 10, WS, (x, y) => new SubtractToken(x, y))
-                    .AddInfix("*", 20, WS, (x, y) => new MultiplyToken(x, y))
-                    .AddInfix("/", 20, WS, (x, y) => new DivideToken(x, y))
-                    .AddInfix("==", 30, WS, (x, y) => new EqualsToken(x, y))
-                    .AddInfix("!=", 30, WS, (x, y) => new NotEqualsToken(x, y))
-                    .AddInfix("<=", 30, WS, (x, y) => new LessThanEqualsToken(x, y))
-                    .AddInfix("<", 30, WS, (x, y) => new LessThanToken(x, y))
-                    .AddInfix(".", 40, WS,
+                    .AddInfix(".", 10, WS,
                         (x, y) => new AccessToken(x, Guard(y, y is FunctionCallToken)))
+                    .AddPrefix("-", 9, WS, token => new NegateToken(token))
+                    .AddPrefix("!", 9, WS, token => new NotToken(token))
+                    .AddInfix("*", 8, WS, (x, y) => new MultiplyToken(x, y))
+                    .AddInfix("/", 8, WS, (x, y) => new DivideToken(x, y))
+                    .AddInfix("+", 7, WS, (x, y) => new AddToken(x, y))
+                    .AddInfix("-", 7, WS, (x, y) => new SubtractToken(x, y))
+                    .AddInfix("<=", 6, WS, (x, y) => new LessThanEqualsToken(x, y))
+                    .AddInfix("<", 6, WS, (x, y) => new LessThanToken(x, y))
+                    .AddInfix("==", 5, WS, (x, y) => new EqualsToken(x, y))
+                    .AddInfix("!=", 5, WS, (x, y) => new NotEqualsToken(x, y))
+                    .AddInfix("&&", 4, WS, (x, y) => new AndToken(x, y))
+                    .AddInfix("||", 3, WS, (x, y) => new OrToken(x, y))
                 )
                 .WithTerms(term => Choice(
                         Native(term),

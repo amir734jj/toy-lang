@@ -116,6 +116,12 @@ namespace AntlrParser
         {
             if (context.VarToken() != null)
             {
+                var name = context.NameToken().First().GetText();
+                if (name == "diff")
+                {
+                    Console.WriteLine("here");
+                }
+                
                 return new VarDeclToken(
                     context.NameToken().First().GetText(),
                     context.NameToken().Last().GetText(),
@@ -157,7 +163,7 @@ namespace AntlrParser
                     Visit(context.expr().Last()));
             }
             
-            if (context.MinusToken() != null && context.expr().Length == 1)
+            if (context.MinusToken() != null && context.expr().Length == 2)
             {
                 return new SubtractToken(
                     Visit(context.expr().First()),
@@ -220,10 +226,11 @@ namespace AntlrParser
                     Visit(context.expr().Last()));
             }
             
-            if (context.DotToken() != null && Visit(context.expr().Last()) is FunctionCallToken functionCall)
+            if (context.DotToken() != null && context.expr().Length == 2 && Visit(context.expr().Last()) is FunctionCallToken functionCall)
             {
+                var receiver = Visit(context.expr().First());
                 return new AccessToken(
-                    Visit(context.expr().First()),
+                    receiver,
                     functionCall);
             }
             
@@ -268,7 +275,8 @@ namespace AntlrParser
 
             if (context.NameToken().Length == 1 && context.expr().Length == 0)
             {
-                return new VariableToken(context.NameToken().First().GetText());
+                var name = context.NameToken().First().GetText();
+                return new VariableToken(name);
             }
 
             if (context.OpenParenToken() != null && context.CloseParenToken() != null)
@@ -284,7 +292,7 @@ namespace AntlrParser
                 }
             }
             
-            return base.VisitExpr(context);
+            throw new ArgumentException();
         }
 
         public override Token VisitFormal(CoolParser.FormalContext context)
@@ -433,7 +441,7 @@ namespace AntlrParser
             
             if (context.StringLiteralToken() != null)
             {
-                return new AtomicToken(context.StringLiteralToken().GetText());
+                return new AtomicToken(context.StringLiteralToken().GetText().Trim('"'));
             }
             
             if (context.DecimalLiteralToken() != null)

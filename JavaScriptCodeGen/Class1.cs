@@ -11,7 +11,17 @@ namespace JavaScriptCodeGen
         private string _joinTokensWith = ";";
 
         private int _indent;
-        
+
+        public override string Visit(AndToken andToken)
+        {
+            return $"{andToken.Left} = {Visit(andToken.Right)}";
+        }
+
+        public override string Visit(OrToken orToken)
+        {
+            return $"{orToken.Left} = {Visit(orToken.Right)}";
+        }
+
         public override string Visit(NativeToken nativeToken)
         {
             return "new Error()";

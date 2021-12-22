@@ -19,6 +19,8 @@ namespace Models
                 NegateToken negateToken => Visit(negateToken),
                 NotToken notToken => Visit(notToken),
                 AddToken addToken => Visit(addToken),
+                AndToken andToken => Visit(andToken),
+                OrToken orToken => Visit(orToken),
                 EqualsToken equalsToken => Visit(equalsToken),
                 NotEqualsToken notEqualsToken => Visit(notEqualsToken),
                 LessThanToken lessThanToken => Visit(lessThanToken),
@@ -43,6 +45,8 @@ namespace Models
             };
         }
         
+        public abstract T Visit(AndToken andToken);
+        public abstract T Visit(OrToken orToken);
         public abstract T Visit(NativeToken nativeToken);
         public abstract T Visit(AssignToken assignToken);
         public abstract T Visit(WhileToken whileToken);

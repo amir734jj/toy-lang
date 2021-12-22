@@ -575,6 +575,102 @@ namespace Semantics
 
             return Unit.Instance;
         }
+        
+        public override Unit Visit(AndToken andToken)
+        {
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+
+            Visit(andToken.Left);
+
+            // Make sure type of LHS is defined
+            if (!_typeContour.Lookup(andToken.Left, out var lhsType))
+            {
+                return Semantics.Error(andToken, "Type of LHS expression is not defined.");
+            }
+
+            // Make sure type of LHS is integer
+            if (lhsType != BOOLEAN_TYPE)
+            {
+                return Semantics.Error(andToken, "Type of LHS should be boolean.");
+            }
+
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+
+            Visit(andToken.Right);
+
+            // Make sure type of RHS is defined
+            if (!_typeContour.Lookup(andToken.Right, out var rhsType))
+            {
+                return Semantics.Error(andToken, "Type of RHS expression is not defined.");
+            }
+
+            // Make sure type of LHS is integer
+            if (rhsType != BOOLEAN_TYPE)
+            {
+                return Semantics.Error(andToken, "Type of RHS should be boolean.");
+            }
+
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+
+            // Export type as integer
+            _typeContour.Update(andToken, BOOLEAN_TYPE);
+
+            return Unit.Instance;
+        }
+        
+        public override Unit Visit(OrToken orToken)
+        {
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+
+            Visit(orToken.Left);
+
+            // Make sure type of LHS is defined
+            if (!_typeContour.Lookup(orToken.Left, out var lhsType))
+            {
+                return Semantics.Error(orToken, "Type of LHS expression is not defined.");
+            }
+
+            // Make sure type of LHS is integer
+            if (lhsType != BOOLEAN_TYPE)
+            {
+                return Semantics.Error(orToken, "Type of LHS should be boolean.");
+            }
+
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+
+            Visit(orToken.Right);
+
+            // Make sure type of RHS is defined
+            if (!_typeContour.Lookup(orToken.Right, out var rhsType))
+            {
+                return Semantics.Error(orToken, "Type of RHS expression is not defined.");
+            }
+
+            // Make sure type of LHS is integer
+            if (rhsType != BOOLEAN_TYPE)
+            {
+                return Semantics.Error(orToken, "Type of RHS should be boolean.");
+            }
+
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+
+            // Export type as integer
+            _typeContour.Update(orToken, BOOLEAN_TYPE);
+
+            return Unit.Instance;
+        }
 
         public override Unit Visit(SubtractToken subtractToken)
         {

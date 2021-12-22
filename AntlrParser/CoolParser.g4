@@ -50,30 +50,30 @@ expr_many:
 	| /* epsilon */;
 
 expr:
-	VarToken NameToken ColonToken NameToken AssignToken expr
-	| NameToken AssignToken expr
-	| IfToken OpenParenToken expr CloseParenToken expr ElseToken expr
-	| WhileToken OpenParenToken expr CloseParenToken expr
-	| OpenBraceToken expr_many CloseBraceToken
+	expr DotToken expr
+	| MinusToken expr
+	| NotToken expr
 	| expr MultiplyToken expr
 	| expr DivideToken expr
 	| expr PlusToken expr
-    | expr MinusToken expr
+	| expr MinusToken expr
 	| expr LessThanToken expr
 	| expr LessThanEqualsToken expr
 	| expr EqualsToken expr
 	| expr NotEqualsToken expr
 	| expr AndToken expr
 	| expr OrToken expr
-	| expr DotToken expr
-	| NameToken actuals
-	| MatchToken expr WithToken arms
-	| atomic
 	| native_nonterminal
-	| NameToken
+	| VarToken NameToken ColonToken NameToken AssignToken expr
 	| NewToken NameToken actuals
-	| MinusToken expr
-	| NotToken expr
+	| IfToken OpenParenToken expr CloseParenToken expr ElseToken expr
+	| WhileToken OpenParenToken expr CloseParenToken expr
+	| MatchToken expr WithToken arms
+	| NameToken AssignToken expr
+	| OpenBraceToken expr_many CloseBraceToken
+	| atomic
+	| NameToken actuals
+	| NameToken
 	| OpenParenToken expr CloseParenToken;
 
 atomic:

@@ -2,6 +2,7 @@
 using System.Reflection;
 using AntlrParser;
 using Core;
+using FParsecParser;
 using JavaScriptCodeGen;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,7 @@ namespace ConsoleApp
                 .AddLogging(cfg => cfg.AddConsole())
                 .Configure<LoggerFilterOptions>(cfg => cfg.MinLevel = LogLevel.Trace)
                 .Scan(x => x.FromAssemblies(
-                    Assembly.Load("FParsec"),
+                    Assembly.Load("FParsecParser"),
                     Assembly.Load("AntlrParser"),
                     Assembly.Load("Semantics"),
                     Assembly.Load("JavaScriptCodeGen")))

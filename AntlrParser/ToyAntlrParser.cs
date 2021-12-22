@@ -30,10 +30,10 @@ namespace AntlrParser
             lexer.AddErrorListener(listenerLexer);
             parser.AddErrorListener(listenerParser);
             
-            foreach (var token in lexer.GetAllTokens())
+            /*foreach (var token in lexer.GetAllTokens())
             {
-                _logger.LogInformation("{} {}", lexer.Vocabulary.GetSymbolicName(token.Type), token);
-            }
+                Console.WriteLine($"[{lexer.Vocabulary.GetSymbolicName(token.Type)}] {token.Text}");
+            }*/
 
             var tree = parser.classes();
             var visitor = new AstBuilderVisitor();

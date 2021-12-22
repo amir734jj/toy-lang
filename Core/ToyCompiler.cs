@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Models.Interfaces;
@@ -35,7 +36,7 @@ namespace Core
             return s =>
             {
                 var ast = _parser.Parse(s);
-                Console.WriteLine(ast);
+                File.WriteAllText($"/home/amir-pc/RiderProjects/toy-lang/Core/basic.{_parser.GetType().Name}", ast.ToString());
 
                 _semantics.Semant(ast);
                 _codeGen.CodeGen(ast);

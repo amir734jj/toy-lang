@@ -41,7 +41,7 @@ namespace Core
             return s =>
             {
                 var ast = _parser.Parse(s);
-                _logger.LogInformation("{%s}", ast);
+                //_logger.LogInformation("{%s}", ast);
 
                 _semantics.Semant(ast);
                 _codeGen.CodeGen(ast);

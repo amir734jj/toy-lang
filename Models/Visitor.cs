@@ -32,6 +32,7 @@ namespace Models
                 InstantiationToken instantiationToken => Visit(instantiationToken),
                 Formal formal => Visit(formal),
                 ClassToken classToken => Visit(classToken),
+                Arms arms => Visit(arms),
                 TypedArmToken typedArmToken => Visit(typedArmToken),
                 NullArmToken nullArmToken => Visit(nullArmToken),
                 Formals formals => Visit(formals),
@@ -72,5 +73,6 @@ namespace Models
         public abstract T Visit(Tokens tokens);
         public abstract T Visit(Classes classes);
         public abstract T Visit(Match match);
+        public abstract T Visit(Arms arms);
     }
 }

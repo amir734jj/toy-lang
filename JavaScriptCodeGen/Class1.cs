@@ -176,5 +176,10 @@ namespace JavaScriptCodeGen
         {
             return "";
         }
+
+        public override string Visit(Arms arms)
+        {
+            return string.Join(" ", arms.Inner.Select(Visit));
+        }
     }
 }

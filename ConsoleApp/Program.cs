@@ -13,11 +13,10 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
-            var logger = loggerFactory.CreateLogger<ToyCompiler>();
-            
-            var compiler = new ToyCompiler(logger)
+
+            var compiler = new ToyCompiler(loggerFactory.CreateLogger<ToyCompiler>())
                 .WithParser(new ToyFparsecParser())
-                .WithSemantics(new ToyBasicSemantics())
+                .WithSemantics(new ToyBasicSemantics(loggerFactory.CreateLogger<ToyBasicSemantics>()))
                 .WithCodeGen(new ToyJavaScriptCodeGen())
                 .Build();
 

@@ -4,19 +4,12 @@ namespace Semantics.Models
 {
     internal class Contour<TKey, TValue>
     {
-        public string Name { get; }
-        
         private readonly IDictionary<TKey, TValue> _table = new Dictionary<TKey, TValue>();
         private Contour<TKey, TValue> _parent;
 
-        public Contour(string name)
-        {
-            Name = name;
-        }
-
         public Contour<TKey, TValue> Push()
         {
-            return new Contour<TKey, TValue>(Name)
+            return new Contour<TKey, TValue>
             {
                 _parent = this
             };

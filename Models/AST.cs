@@ -5,11 +5,7 @@ namespace Models
 {
     internal static class IsExternalInit {}
 
-    public record Token
-    {
-        // ReSharper disable once UnusedMember.Global
-        public Guid Id => Guid.NewGuid();
-    }
+    public record Token;
 
     #region Misc
     

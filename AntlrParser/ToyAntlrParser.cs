@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using Antlr4.Runtime;
+using Microsoft.Extensions.Logging;
 using Models;
 using Models.Interfaces;
 
@@ -8,6 +9,13 @@ namespace AntlrParser
 {
     public class ToyAntlrParser : IToyParser
     {
+        private readonly ILogger<ToyAntlrParser> _logger;
+
+        public ToyAntlrParser(ILogger<ToyAntlrParser> logger)
+        {
+            _logger = logger;
+        }
+        
         public Classes Parse(string text)
         {
             var str = CharStreams.fromString(text);
@@ -21,6 +29,11 @@ namespace AntlrParser
             
             lexer.AddErrorListener(listenerLexer);
             parser.AddErrorListener(listenerParser);
+            
+            foreach (var token in lexer.GetAllTokens())
+            {
+                _logger.LogInformation("{} {}", lexer.Vocabulary.GetSymbolicName(token.Type), token);
+            }
 
             var tree = parser.classes();
             var visitor = new AstBuilderVisitor();

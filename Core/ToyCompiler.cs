@@ -7,20 +7,14 @@ namespace Core
 {
     public class ToyCompiler : IToyCompilerParser, IToyCompilerSemantic, IToyCompilerCodeGen, IToyCompilerBuild
     {
-        private readonly ILogger<ToyCompiler> _logger;
         private IToyParser _parser;
         private IToySemantics _semantics;
         private IToyCodeGen _codeGen;
 
-        public ToyCompiler(ILogger<ToyCompiler> logger)
-        {
-            _logger = logger;
-        }
-        
         public IToyCompilerSemantic WithParser(IToyParser parser)
         {
             _parser = parser;
-            
+
             return this;
         }
 
@@ -41,10 +35,10 @@ namespace Core
             return s =>
             {
                 var ast = _parser.Parse(s);
-                //_logger.LogInformation("{%s}", ast);
+                Console.WriteLine(ast);
 
                 _semantics.Semant(ast);
-                // _codeGen.CodeGen(ast);
+                _codeGen.CodeGen(ast);
             };
         }
     }

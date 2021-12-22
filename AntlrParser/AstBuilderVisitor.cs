@@ -16,7 +16,7 @@ namespace AntlrParser
                 return new ClassToken(
                     context.NameToken().First().GetText(),
                     (Formals)Visit(context.formals()),
-                    "native",
+                    NOTHING_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     (Tokens)Visit(context.features()));
             }
@@ -36,7 +36,7 @@ namespace AntlrParser
                 return new ClassToken(
                     context.NameToken().First().GetText(),
                     (Formals)Visit(context.formals()),
-                    NO_TYPE,
+                    ANY_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     (Tokens)Visit(context.features()));
             }
@@ -220,11 +220,11 @@ namespace AntlrParser
                     Visit(context.expr().Last()));
             }
             
-            if (context.DotToken() != null)
+            if (context.DotToken() != null && Visit(context.expr().Last()) is FunctionCallToken functionCall)
             {
                 return new AccessToken(
                     Visit(context.expr().First()),
-                    Visit(context.expr().Last()));
+                    functionCall);
             }
             
             if (context.actuals() is { IsEmpty: false})
@@ -275,7 +275,7 @@ namespace AntlrParser
             {
                 if (context.expr() is { Length: 0 })
                 {
-                    return new AtomicToken(UNIT_SYMBOL);
+                    return new AtomicToken(UNIT_SYMBOL_VALUE);
                 }
 
                 if (context.expr() is { Length: 1 })
@@ -444,6 +444,11 @@ namespace AntlrParser
             if (context.BooleanLiteralToken() != null)
             {
                 return new AtomicToken(bool.Parse(context.BooleanLiteralToken().GetText()));
+            }
+            
+            if (context.OpenParenToken() != null && context.OpenParenToken() != null)
+            {
+                return new AtomicToken(UNIT_SYMBOL_VALUE);
             }
             
             throw new ArgumentException();

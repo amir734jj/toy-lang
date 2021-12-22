@@ -2,6 +2,8 @@
 
 using System.IO;
 using Antlr4.Runtime;
+// ReSharper disable PublicConstructorInAbstractClass
+// ReSharper disable MemberCanBePrivate.Global
 
 // ReSharper disable once CheckNamespace
 // ReSharper disable once CheckNamespace

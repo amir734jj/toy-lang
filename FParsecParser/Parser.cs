@@ -13,7 +13,7 @@ using static Models.Constants;
 
 namespace FParsecParser
 {
-    internal static class Parser
+    public static class Parser
     {
         /// <summary>
         /// Any type of variable name
@@ -65,7 +65,7 @@ namespace FParsecParser
                     .Label("null")
                     .Return((Token)new AtomicToken(null));
                 var unitLiteral = Wrap('(', ')')
-                    .Return((Token)new AtomicToken(UNIT_SYMBOL));
+                    .Return((Token)new AtomicToken(UNIT_SYMBOL_VALUE));
 
                 var atomicP = Choice(nullP, numberP, quotedStringP, boolP, unitLiteral).Label("atomic");
 
@@ -227,7 +227,7 @@ namespace FParsecParser
                     .AddInfix("<=", 30, WS, (x, y) => new LessThanEqualsToken(x, y))
                     .AddInfix("<", 30, WS, (x, y) => new LessThanToken(x, y))
                     .AddInfix(".", 40, WS,
-                        (x, y) => new AccessToken(x, Guard(y, y is VariableToken or FunctionCallToken)))
+                        (x, y) => new AccessToken(x, Guard(y, y is FunctionCallToken)))
                 )
                 .WithTerms(term => Choice(
                         Native(term),
@@ -366,7 +366,7 @@ namespace FParsecParser
                 .Map(x => new ClassToken(
                     x.Item1.Item1,
                     x.Item1.Item2,
-                    NO_TYPE,
+                    ANY_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     new Tokens(x.Item2)
                 ));
@@ -381,7 +381,7 @@ namespace FParsecParser
                 .Map(x => new ClassToken(
                     x.Item1.Item1,
                     x.Item1.Item2,
-                    "native",
+                    NOTHING_TYPE,
                     new Tokens(new List<Token>().AsValueSemantics()),
                     new Tokens(x.Item2)
                 ));

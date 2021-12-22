@@ -1,8 +1,9 @@
 ﻿using System.IO;
+using System.Reflection;
 using AntlrParser;
 using Core;
-using FParsecParser;
 using JavaScriptCodeGen;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Semantics;
 
@@ -12,12 +13,20 @@ namespace ConsoleApp
     {
         static void Main(string[] args)
         {
-            var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
+            var serviceProvider = new ServiceCollection()
+                .AddLogging(cfg => cfg.AddConsole())
+                .Configure<LoggerFilterOptions>(cfg => cfg.MinLevel = LogLevel.Trace)
+                .Scan(x => x.FromAssemblies(
+                    Assembly.Load("FParsec"),
+                    Assembly.Load("AntlrParser"),
+                    Assembly.Load("Semantics"),
+                    Assembly.Load("JavaScriptCodeGen")))
+                .BuildServiceProvider();
 
-            var compiler = new ToyCompiler(loggerFactory.CreateLogger<ToyCompiler>())
-                .WithParser(new ToyFparsecParser())
-                .WithSemantics(new ToyBasicSemantics(loggerFactory.CreateLogger<ToyBasicSemantics>()))
-                .WithCodeGen(new ToyJavaScriptCodeGen())
+            var compiler = new ToyCompiler()
+                .WithParser(serviceProvider.GetService<ToyAntlrParser>())
+                .WithSemantics(serviceProvider.GetService<ToyBasicSemantics>())
+                .WithCodeGen(serviceProvider.GetService<ToyJavaScriptCodeGen>())
                 .Build();
 
             compiler(File.ReadAllText("basic.toy"));

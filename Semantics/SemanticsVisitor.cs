@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models;
@@ -15,11 +14,14 @@ namespace Semantics
 
         private readonly Dictionary<string, string> _hierarchy = new();
 
-        private ClassToken _isInsideOfClass;
+        private ClassToken _outerClassToken;
 
-        private readonly string[] _basicTypes = { "String", "Int", "Boolean", "Unit", "Any", "ArrayAny", "Symbol" };
+        private readonly string[] _basicTypes =
+            { STRING_TYPE, INTEGER_TYPE, BOOLEAN_TYPE, UNIT_TYPE, NOTHING_TYPE, ARRAY_ANY_TYPE, SYMBOL_TYPE };
 
-        private readonly Dictionary<string, IReadOnlyCollection<FunctionDeclToken>> _methods = new();
+        private readonly Dictionary<string, Dictionary<string, FunctionDeclToken>> _methods = new();
+
+        private Dictionary<string, FunctionDeclToken> _availableMethods = new();
 
         // ReSharper disable once MemberCanBePrivate.Global
         public readonly SemanticErrors Semantics = new();
@@ -27,7 +29,7 @@ namespace Semantics
         public override Unit Visit(NativeToken nativeToken)
         {
             // Native has a root type
-            _typeContour.Update(nativeToken, ROOT_TYPE);
+            _typeContour.Update(nativeToken, ANY_TYPE);
 
             return Unit.Instance;
         }
@@ -213,18 +215,17 @@ namespace Semantics
 
         public override Unit Visit(FunctionDeclToken functionDeclToken)
         {
-            // Export function decl name
-            _variableContour.Update(functionDeclToken.Name, functionDeclToken);
-
-            // Export function type
-            _typeContour.Update(functionDeclToken, functionDeclToken.Type);
-
             // Enter function contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
             Visit(functionDeclToken.Formals);
             Visit(functionDeclToken.Body);
+
+            if (functionDeclToken.Type != NOTHING_TYPE && !_hierarchy.ContainsKey(functionDeclToken.Type))
+            {
+                return Semantics.Error(functionDeclToken, "Return type of function should be defined.");
+            }
 
             // Exist function contour
             _variableContour = _variableContour.Pop();
@@ -248,7 +249,7 @@ namespace Semantics
             }
             else
             {
-                var tokenType = ROOT_TYPE;
+                var tokenType = ANY_TYPE;
                 foreach (var token in blockToken.Tokens.Inner)
                 {
                     if (!_typeContour.Lookup(token, out tokenType))
@@ -278,22 +279,15 @@ namespace Semantics
 
             Visit(functionCallToken.Actuals);
 
+            if (_outerClassToken == null)
+            {
+                return Semantics.Error(functionCallToken, "Cannot have method outside of class.");
+            }
+
             // Make sure function decl is actually defined
-            if (!_variableContour.Lookup(functionCallToken.Name, out var functionDeclUntyped))
+            if (!_availableMethods.TryGetValue(functionCallToken.Name, out var functionDeclToken))
             {
                 return Semantics.Error(functionCallToken, "Function is not defined and cannot be invoked.");
-            }
-
-            // Make sure variable being invoked is actually function decl
-            if (functionDeclUntyped is not FunctionDeclToken functionDeclToken)
-            {
-                return Semantics.Error(functionCallToken, "Can only invoke a function call.");
-            }
-
-            // Make sure type of function decl is defined
-            if (!_typeContour.Lookup(functionDeclToken, out var functionType))
-            {
-                return Semantics.Error(functionCallToken, "Cannot find the type of function decl.");
             }
 
             // Make sure count of formals and actuals are equal
@@ -325,7 +319,7 @@ namespace Semantics
             _typeContour = _typeContour.Pop();
 
             // Type of function call is the static type of function decl
-            _typeContour.Update(functionCallToken, functionType);
+            _typeContour.Update(functionCallToken, functionDeclToken.Type);
 
             return Unit.Instance;
         }
@@ -733,9 +727,9 @@ namespace Semantics
                 string => STRING_TYPE,
                 int => INTEGER_TYPE,
                 bool => BOOLEAN_TYPE,
-                null => ROOT_TYPE,
-                UNIT_SYMBOL => UNIT_TYPE,
-                _ => ROOT_TYPE
+                null => ANY_TYPE,
+                UNIT_SYMBOL_VALUE => UNIT_TYPE,
+                _ => ANY_TYPE
             });
 
             return Unit.Instance;
@@ -743,9 +737,9 @@ namespace Semantics
 
         public override Unit Visit(VariableToken variableToken)
         {
-            if (_isInsideOfClass != null && variableToken.Variable == "this")
+            if (_outerClassToken != null && variableToken.Variable == THIS_VAR)
             {
-                _typeContour.Update(variableToken, _isInsideOfClass.Name);
+                _typeContour.Update(variableToken, _outerClassToken.Name);
                 
                 return Unit.Instance;
             }
@@ -787,12 +781,8 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            // Set the contour of access expression
-            foreach (var functionDeclToken in _methods[receiverType])
-            {
-                _variableContour.Update(functionDeclToken.Name, functionDeclToken);
-                _typeContour.Update(functionDeclToken, functionDeclToken.Type);
-            }
+            var tempAvailableMethods = _availableMethods;
+            _availableMethods = _methods[receiverType];
 
             Visit(accessToken.Variable);
 
@@ -800,6 +790,8 @@ namespace Semantics
             {
                 return Semantics.Error(accessToken, "Type of variable is not defined.");
             }
+
+            _availableMethods = tempAvailableMethods;
 
             // Exist LHS
             _variableContour = _variableContour.Pop();
@@ -896,13 +888,13 @@ namespace Semantics
             }
 
             // Make sure class is not extending one of basic types
-            if (_basicTypes.Contains(classToken.Inherits))
+            if (classToken.Name != ANY_TYPE && _basicTypes.Contains(classToken.Inherits))
             {
-                return Semantics.Error(classToken, "Class cannot extend a native type.");
+                return Semantics.Error(classToken, "Class cannot extend a native types.");
             }
 
             // Make sure class being extended actually exist
-            if (classToken.Inherits != "native" && classToken.Inherits != NO_TYPE)
+            if (classToken.Inherits != "native" && classToken.Inherits != NOTHING_TYPE)
             {
                 // Make sure extending class has been declared
                 if (!_variableContour.Lookup(classToken.Inherits, out var extendingClassUntyped))
@@ -942,7 +934,8 @@ namespace Semantics
                 }
             }
 
-            _isInsideOfClass = classToken;
+            _outerClassToken = classToken;
+            _availableMethods = _methods[classToken.Name];
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
@@ -951,7 +944,8 @@ namespace Semantics
 
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
-            _isInsideOfClass = null;
+            _outerClassToken = null;
+            _availableMethods = new();
 
             return Unit.Instance;
         }
@@ -1001,7 +995,7 @@ namespace Semantics
         public override Unit Visit(NullArmToken nullArmToken)
         {
             // Type of null arm of branch is ROOT_TYPE
-            _typeContour.Update(nullArmToken, ROOT_TYPE);
+            _typeContour.Update(nullArmToken, ANY_TYPE);
 
             return Unit.Instance;
         }
@@ -1037,14 +1031,54 @@ namespace Semantics
                 {
                     return Semantics.Error(classToken, "Duplicate class name is not allowed.");
                 }
+            }
+            
+            // Collect methods
+            foreach (var classToken in classes.Inner) {
+                var parentMethods = new Dictionary<string, FunctionDeclToken>();
+                if (classToken.Inherits != NOTHING_TYPE)
+                {
+                    parentMethods = _methods[classToken.Inherits];
+                }
 
-                _methods[classToken.Name] = classToken.Features.Inner.Where(x => x is FunctionDeclToken)
-                    .Cast<FunctionDeclToken>()
-                    .ToList()
-                    .AsReadOnly();
+                var classDeclMethods = parentMethods.ToDictionary(x => x.Key, x => x.Value);
+                foreach (var functionDeclToken in classToken.Features.Inner
+                    .Where(x => x is FunctionDeclToken)
+                    .Cast<FunctionDeclToken>())
+                {
+                    if (classDeclMethods.ContainsKey(functionDeclToken.Name))
+                    {
+                        var parentMethod = classDeclMethods[functionDeclToken.Name];
+                        if (!functionDeclToken.Override)
+                        {
+                            return Semantics.Error(classToken, "Should use overrides when overriding a parent method.");
+                        }
+
+                        if (functionDeclToken.Formals.Inner.Count != parentMethod.Formals.Inner.Count)
+                        {
+                            return Semantics.Error(classToken, "Count of formals should match when overriding a method.");
+                        }
+                        
+                        for (var i = 0; i < functionDeclToken.Formals.Inner.Count; i++)
+                        {
+                            var currentFormal = functionDeclToken.Formals.Inner[i];
+                            var parentFormal = parentMethod.Formals.Inner[i];
+
+                            if (TypeLub(currentFormal.Type, parentFormal.Type) != parentFormal.Type)
+                            {
+                                return Semantics.Error(classToken,
+                                    "Current formal type should be superset of parent formal type when overriding a method.");
+                            }
+                        }
+                    }
+                    
+                    classDeclMethods[functionDeclToken.Name] = functionDeclToken;
+                }
+
+                _methods[classToken.Name] = classDeclMethods;
 
                 _variableContour.Update(classToken.Name, classToken);
-                _typeContour.Update(classToken, ROOT_TYPE);
+                _typeContour.Update(classToken, NOTHING_TYPE);
             }
 
             // Visit classes
@@ -1125,7 +1159,7 @@ namespace Semantics
         {
             return _hierarchy.TryGetValue(t, out var parent)
                 ? new List<string> { t }.Concat(TypePathToRoot(parent)).ToList()
-                : new List<string> { ROOT_TYPE };
+                : new List<string> { ANY_TYPE };
         }
 
         private string TypeLub(string t1, string t2)
@@ -1135,9 +1169,9 @@ namespace Semantics
                 return t2;
             }
 
-            if (t1 == ROOT_TYPE || t2 == ROOT_TYPE)
+            if (t1 == ANY_TYPE || t2 == ANY_TYPE)
             {
-                return ROOT_TYPE;
+                return ANY_TYPE;
             }
 
             var p1 = TypePathToRoot(t1);

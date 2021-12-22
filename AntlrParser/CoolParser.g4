@@ -55,10 +55,10 @@ expr:
 	| IfToken OpenParenToken expr CloseParenToken expr ElseToken expr
 	| WhileToken OpenParenToken expr CloseParenToken expr
 	| OpenBraceToken expr_many CloseBraceToken
-	| expr PlusToken expr
-	| expr MinusToken expr
 	| expr MultiplyToken expr
 	| expr DivideToken expr
+	| expr PlusToken expr
+    | expr MinusToken expr
 	| expr LessThanToken expr
 	| expr LessThanEqualsToken expr
 	| expr EqualsToken expr
@@ -74,14 +74,14 @@ expr:
 	| NewToken NameToken actuals
 	| MinusToken expr
 	| NotToken expr
-	| OpenParenToken CloseParenToken
 	| OpenParenToken expr CloseParenToken;
 
 atomic:
 	NullLiteralToken
-	| StringLiteralToken
+	| BooleanLiteralToken
 	| DecimalLiteralToken
-	| BooleanLiteralToken;
+	| StringLiteralToken
+	| OpenParenToken CloseParenToken;
 
 null_arm: CaseToken NullLiteralToken ArrowToken expr;
 typed_arm:

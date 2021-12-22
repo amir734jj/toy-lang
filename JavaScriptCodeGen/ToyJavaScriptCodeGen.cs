@@ -1,3 +1,4 @@
+using System;
 using Models;
 using Models.Interfaces;
 
@@ -7,7 +8,9 @@ namespace JavaScriptCodeGen
     {
         public void CodeGen(Classes classes)
         {
-            throw new System.NotImplementedException();
+            var visitor = new JavaScriptCodeGenVisitor();
+
+            Console.WriteLine(visitor.Visit(classes));
         }
     }
 }

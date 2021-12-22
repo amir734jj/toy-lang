@@ -17,4 +17,8 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Scrutor.AspNetCore" Version="3.3.0" />
+    </ItemGroup>
+
 </Project>

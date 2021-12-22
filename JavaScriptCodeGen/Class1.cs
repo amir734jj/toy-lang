@@ -2,14 +2,19 @@
 using System.Linq;
 using Models;
 using static Models.Constants;
+// ReSharper disable RedundantStringInterpolation
 
 namespace JavaScriptCodeGen
 {
     internal class JavaScriptCodeGenVisitor : Visitor<string>
     {
+        private string _joinTokensWith = ";";
+
+        private int _indent;
+        
         public override string Visit(NativeToken nativeToken)
         {
-            throw new NotImplementedException();
+            return "new Error()";
         }
 
         public override string Visit(AssignToken assignToken)
@@ -19,39 +24,58 @@ namespace JavaScriptCodeGen
 
         public override string Visit(WhileToken whileToken)
         {
-            return $@"while ({whileToken.Condition}) {{
-                        {Visit(whileToken.Body)}
-                      }}";
+            return $"{MakeIndent(_indent)}while ({Visit(whileToken.Condition)}) {{\n" +
+                   $"{MakeIndent(_indent + 1)}{Visit(whileToken.Body)} \n" +
+                   $"{MakeIndent(_indent)}}}";
         }
 
         public override string Visit(CondToken condToken)
         {
-            return $@"if ({Visit(condToken.Condition)})
-                        {Visit(condToken.IfToken)};
-                      else
-                        {Visit(condToken.ElseToken)}";
+            return $"({Visit(condToken.Condition)}) ? " +
+                   $"{Visit(condToken.IfToken)} : " +
+                   $"{Visit(condToken.ElseToken)}";
         }
 
         public override string Visit(VarDeclToken varDeclToken)
         {
-            return $@"var {varDeclToken.Variable} = {Visit(varDeclToken.Body)};";
+            return $"var {varDeclToken.Variable} = {Visit(varDeclToken.Body)};";
         }
 
         public override string Visit(FunctionDeclToken functionDeclToken)
         {
-            throw new NotImplementedException();
+            return $"{MakeIndent(_indent)}{functionDeclToken.Name}{Visit(functionDeclToken.Formals)} {{\n" +
+                   $"{MakeIndent(_indent + 1)}{Visit(functionDeclToken.Body)}\n" +
+                   $"{MakeIndent(_indent)}}}";
         }
 
         public override string Visit(BlockToken blockToken)
         {
-            throw new NotImplementedException();
+            var prevJoinTokensWith = _joinTokensWith;
+            
+            _joinTokensWith = ";\n";
+
+            var result = $"(() => {{ {MakeIndent(_indent + 1)}{Visit(blockToken.Tokens)} }})()";
+
+            _joinTokensWith = prevJoinTokensWith;
+            
+            return result;
         }
 
         public override string Visit(FunctionCallToken functionCallToken)
         {
-            //return
-            //    $"{Visit(functionCallToken.Receiver)}({String.Join(',', functionCallToken.Actuals.Inner.Select(Visit))})";
-            throw new NotImplementedException();
+            var prevJoinTokensWith = _joinTokensWith;
+            
+            _joinTokensWith = ",";
+
+            var prevIndent = _indent;
+            _indent = 0;
+            
+            var result = $"{functionCallToken.Name}({Visit(functionCallToken.Actuals)})";
+
+            _indent = prevIndent;
+            _joinTokensWith = prevJoinTokensWith;
+            
+            return result;
         }
 
         public override string Visit(NegateToken negateToken)
@@ -108,10 +132,11 @@ namespace JavaScriptCodeGen
         {
             return atomicToken.Value switch
             {
-                string str => @$"""{str}""",
+                string str => $"{str}",
                 int number => number.ToString(),
                 bool boolean => boolean.ToString().ToLower(),
                 null => null,
+                UNIT_SYMBOL_VALUE => "{}",
                 _ => throw new ArgumentOutOfRangeException()
             };
         }
@@ -139,12 +164,27 @@ namespace JavaScriptCodeGen
 
         public override string Visit(ClassToken classToken)
         {
-            return $@"class {classToken.Name} extends {(classToken.Inherits == ROOT_TYPE ? "Object" : classToken.Inherits)} {{
-                        constructor {Visit(classToken.Formals)} {{
-                            super({string.Join(',', classToken.Actuals.Inner.Select(Visit))});
-                        }}
-                        {string.Join(";\n", Visit(classToken.Features))}
-                      }}";
+            var parentClass = classToken.Inherits is ANY_TYPE or NOTHING_TYPE ? "Object" : classToken.Inherits;
+
+            var prevJoinTokensWith = _joinTokensWith;
+            
+            _joinTokensWith = ";\n    ";
+
+            _indent++;
+            var features = Visit(classToken.Features);
+            _indent--;
+            
+            var result =
+                $"class {classToken.Name} extends {parentClass} {{\n" +
+                $"{MakeIndent(1)}constructor {Visit(classToken.Formals)} {{\n" +
+                $"{MakeIndent(2)}super({string.Join(',', classToken.Actuals.Inner.Select(Visit))});\n" +
+                $"{MakeIndent(1)}}}\n" +
+                $"{features}\n" +
+                $"}}";
+
+            _joinTokensWith = prevJoinTokensWith;
+            
+            return result;
         }
 
         public override string Visit(TypedArmToken typedArmToken)
@@ -159,12 +199,12 @@ namespace JavaScriptCodeGen
 
         public override string Visit(Formals formals)
         {
-            return $@"({string.Join(',', formals.Inner.Select(Visit))})";
+            return $"({string.Join(',', formals.Inner.Select(Visit))})";
         }
 
         public override string Visit(Tokens tokens)
         {
-            throw new NotImplementedException();
+            return string.Join(_joinTokensWith, tokens.Inner.Select(Visit));
         }
 
         public override string Visit(Classes classes)
@@ -180,6 +220,11 @@ namespace JavaScriptCodeGen
         public override string Visit(Arms arms)
         {
             return string.Join(" ", arms.Inner.Select(Visit));
+        }
+
+        private string MakeIndent(int indent)
+        {
+            return new string(Enumerable.Range(0, indent).Select(_ => '\t').ToArray());
         }
     }
 }

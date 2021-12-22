@@ -52,7 +52,7 @@ NativeToken: 'native';
 ClassToken: 'class';
 ExtendsToken: 'extends';
 
-NameToken: ~[:" {}=()\n;,*!.<>]+;
+NameToken: ~[:" {}=()\n;,!.<>*-+/]+;
 StringLiteralToken: '"' ( ~[\\"\r\n])* '"';
 WhiteSpacesToken: [\t]+ -> channel(HIDDEN);
 LineTerminatorToken: [\r\n] -> channel(HIDDEN);

@@ -64,8 +64,10 @@ namespace FParsecParser
                 var nullP = Skip("null")
                     .Label("null")
                     .Return((Token)new AtomicToken(null));
+                var unitLiteral = Wrap('(', ')')
+                    .Return((Token)new AtomicToken(UNIT_SYMBOL));
 
-                var atomicP = Choice(nullP, numberP, quotedStringP, boolP).Label("atomic");
+                var atomicP = Choice(nullP, numberP, quotedStringP, boolP, unitLiteral).Label("atomic");
 
                 return SkipComments(atomicP);
             }
@@ -396,6 +398,14 @@ namespace FParsecParser
             return SkipComments(classesP);
         }
 
+        private static FSharpFunc<CharStream<Unit>, Reply<Unit>> Wrap(
+            char start,
+            char end)
+        {
+            var wrapP = SkipComments(CharP(start)).AndRTry(SkipComments(CharP(end)));
+            return Skip(wrapP);
+        }
+        
         private static FSharpFunc<CharStream<Unit>, Reply<T>> Wrap<T>(
             char start,
             FSharpFunc<CharStream<Unit>, Reply<T>> p,

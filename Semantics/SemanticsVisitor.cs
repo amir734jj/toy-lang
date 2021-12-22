@@ -41,17 +41,22 @@ namespace Semantics
             
             if (!_variableContour.Lookup(assignToken.Variable, out var variableToken))
             {
-                Errors[assignToken] = "Cannot assign to a variable that has not be defined yet.";
+                Errors.Add((assignToken, "Cannot assign to a variable that has not be defined yet."));
             }
 
             if (!_typeContour.Lookup(assignToken.Body, out var exprType))
             {
-                Errors[assignToken] = "Type of expression is not defined.";
+                Errors.Add((assignToken, "Type of assignment body is not defined."));
+            }
+            
+            if (!_typeContour.Lookup(variableToken, out var variableType))
+            {
+                Errors.Add((assignToken, "Type of variable is not defined."));
             }
 
-            if (TypeLub(_typeContour[variableToken], _typeContour[assignToken.Body]) != _typeContour[variableToken])
+            if (TypeLub(exprType, variableType) != variableType)
             {
-                Errors[assignToken] = "Type of LHS should be a superset equals of right hand side";
+                Errors.Add((assignToken, "Type of LHS of assignment should be a superset equals of right hand side"));
             }
             
             // Exit contours
@@ -63,63 +68,124 @@ namespace Semantics
 
         public override Unit Visit(WhileToken whileToken)
         {
+            // Enter loop condition contour
             _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(whileToken.Condition);
-            _variableContour = _variableContour.Pop();
 
-            if (_typeContour[whileToken.Condition] != "Boolean")
+            if (!_typeContour.Lookup(whileToken.Condition, out var condType))
             {
-                Errors.Add("While loop condition should have a type of Boolean.");
+                Errors.Add((whileToken, "Type of conditional expression is not defined."));
             }
             
-            _variableContour = _variableContour.Push();
-            Visit(whileToken.Body);
+            if (condType != "Boolean")
+            {
+                Errors.Add((whileToken, "While loop condition should have a type of Boolean."));
+            }
+                    
+            // Exit loop condition contour
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
+            
+            // Enter loop body contour
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
+            Visit(whileToken.Body);
+            
+            // Exit loop body contour
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            // Type of while loop is Unit
+            _typeContour.Update(whileToken, "Unit");
             
             return _unit;
         }
 
         public override Unit Visit(CondToken condToken)
         {
+            // Enter if condition contour
             _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(condToken.Condition);
-            _variableContour = _variableContour.Pop();
-            _typeContour = _typeContour.Pop();
             
-            _variableContour = _variableContour.Push();
-            Visit(condToken.IfToken);
-            _variableContour = _variableContour.Pop();
-            _typeContour = _typeContour.Pop();
-            
-            _variableContour = _variableContour.Push();
-            Visit(condToken.ElseToken);
-            _variableContour = _variableContour.Pop();
-            _typeContour = _typeContour.Pop();
-            
-            if (_typeContour[condToken.Condition] != "Boolean")
+            if (!_typeContour.Lookup(condToken.Condition, out var condType))
             {
-                Errors.Add("If condition should have a type of Boolean.");
+                Errors.Add((condToken, "Type of conditional expression is not defined."));
             }
+            
+            if (condType != "Boolean")
+            {
+                Errors.Add((condToken, "If condition should have a type of Boolean."));
+            }
+            
+            // Exit if condition contour
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            // Enter if if expression contour
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
+            Visit(condToken.IfToken);
+            
+            if (!_typeContour.Lookup(condToken.IfToken, out var ifType))
+            {
+                Errors.Add((condToken, "Type of conditional if expression is not defined."));
+            }
+            
+            // Exit if if expression contour
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            // Enter if else expression contour
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
+            Visit(condToken.ElseToken);
+            
+            if (!_typeContour.Lookup(condToken.IfToken, out var elseType))
+            {
+                Errors.Add((condToken, "Type of conditional else expression is not defined."));
+            }
+            
+            // Exit if else expression contour
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
+            // Type of If is LUB of if and else expressions
+            _typeContour.Update(condToken, TypeLub(ifType, elseType));
 
             return _unit;
         }
 
         public override Unit Visit(VarDeclToken varDeclToken)
         {
+            // Enter var decl expression contour
             _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(varDeclToken.Body);
 
-            _typeContour[varDeclToken] = varDeclToken.Type;
-            if (TypeLub(_typeContour[varDeclToken], _typeContour[varDeclToken.Body]) != _typeContour[varDeclToken])
+            if (!_typeContour.Lookup(varDeclToken.Body, out var exprType))
             {
-                Errors.Add("Type of LHS should be a superset equals of right hand side");
+                Errors.Add((varDeclToken, "Type of var decl body is not defined."));
             }
             
+            if (TypeLub(varDeclToken.Type, exprType) != varDeclToken.Type)
+            {
+                Errors.Add((varDeclToken, "Type of LHS of var decl should be a superset equals of right hand side"));
+            }
+            
+            // Exit var decl expression contour
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
             
             _variableContour.Update(varDeclToken.Variable, varDeclToken);
+            _typeContour.Update(varDeclToken, varDeclToken.Type);
             
             return _unit;
         }
@@ -128,11 +194,19 @@ namespace Semantics
         {
             _variableContour.Update(functionDeclToken.Name, functionDeclToken);
             
+            // Enter function contour
             _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(functionDeclToken.Formals);
             Visit(functionDeclToken.Body);
+            
+            // Exist function contour
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
+            
+            _variableContour.Update(functionDeclToken.Name, functionDeclToken);
+            _typeContour.Update(functionDeclToken, functionDeclToken.Type);
             
             return _unit;
         }
@@ -198,12 +272,18 @@ namespace Semantics
         public override Unit Visit(EqualsToken equalsToken)
         {
             _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(equalsToken.Left);
+            
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
             
             _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(equalsToken.Right);
+            
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
             
@@ -404,14 +484,15 @@ namespace Semantics
 
         public override Unit Visit(AtomicToken atomicToken)
         {
-            _typeContour[atomicToken] = atomicToken.Value switch
+            _typeContour.Update(atomicToken, atomicToken.Value switch
             {
-                string _ => "String",
-                int _ => "Int",
-                bool _ => "Boolean",
+                string => "String",
+                int => "Int",
+                bool => "Boolean",
                 null => ROOT_TYPE,
-                _ => _typeContour[atomicToken]
-            };
+                UNIT_SYMBOL => "Unit",
+                _ => ROOT_TYPE
+            });
 
             return _unit;
         }
@@ -455,11 +536,14 @@ namespace Semantics
         {
             if (!_variableContour.Lookup(instantiationToken.Class, out _))
             {
-                Errors[instantiationToken] = "Instantiation of class which does not exist.";
+                Errors.Add((instantiationToken, "Instantiation of class which does not exist."));
             }
             
             _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
             Visit(instantiationToken.Actuals);
+            
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
             

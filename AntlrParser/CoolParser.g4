@@ -74,7 +74,8 @@ expr:
 	| NewToken NameToken actuals
 	| MinusToken expr
 	| NotToken expr
-	| OpenBraceToken expr CloseBraceToken;
+	| OpenParenToken CloseParenToken
+	| OpenParenToken expr CloseParenToken;
 
 atomic:
 	NullLiteralToken

@@ -270,6 +270,19 @@ namespace AntlrParser
             {
                 return new VariableToken(context.NameToken().First().GetText());
             }
+
+            if (context.OpenParenToken() != null && context.CloseParenToken() != null)
+            {
+                if (context.expr() is { Length: 0 })
+                {
+                    return new AtomicToken(UNIT_SYMBOL);
+                }
+
+                if (context.expr() is { Length: 1 })
+                {
+                    return Visit(context.expr().First());
+                }
+            }
             
             return base.VisitExpr(context);
         }

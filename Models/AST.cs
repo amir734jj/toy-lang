@@ -5,7 +5,10 @@ namespace Models
 {
     internal static class IsExternalInit {}
 
-    public record Token;
+    public record Token
+    {
+        public Guid Id => Guid.NewGuid();
+    }
 
     #region Misc
     

@@ -10,21 +10,6 @@ namespace ParserTests
     public class AccessParserTest
     {
         [Theory]
-        [InlineData("foo.bar")]
-        [InlineData(" foo.bar")]
-        [InlineData("foo.bar ")]
-        [InlineData(" foo.bar ")]
-        public void Test_AccessName(string text)
-        {
-            // Act
-            var reply = Parser.Expression().ParseString(text);
-
-            // Assert
-            Assert.True(reply.IsOk());
-            Assert.Equal(new AccessToken(new VariableToken("foo"), new VariableToken("bar")), reply.Result);
-        }
-        
-        [Theory]
         [InlineData("foo.bar()")]
         [InlineData(" foo.bar()")]
         [InlineData("foo.bar() ")]

@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using Core.Extensions;
 using Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Models.Interfaces;
@@ -15,7 +14,7 @@ namespace Core
         private IToyParser _parser;
         private IToySemantics _semantics;
         private IAstDump _astDump;
-        public static readonly MemoryStream BasicFileText = new(File.ReadAllBytes("basic.toy"));
+        public static readonly byte[] BasicFileText = File.ReadAllBytes("basic.toy");
 
         public ToyCompiler(ILogger<ToyCompiler> logger)
         {
@@ -45,9 +44,8 @@ namespace Core
         {
             return code =>
             {
-                var ast = _parser.Parse(new ConcatenatedStream(
-                    BasicFileText,
-                    new MemoryStream(Encoding.Default.GetBytes(code))));
+                var stream = new MemoryStream(BasicFileText.Concat(Encoding.Default.GetBytes(code)).ToArray());
+                var ast = _parser.Parse(stream);
 
                 _semantics.Semant(ast);
                 _astDump.CodeGen(ast);

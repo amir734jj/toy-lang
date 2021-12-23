@@ -1,9 +1,7 @@
-﻿using System.IO;
-using System.Reflection;
+﻿using System.Reflection;
 using AntlrParser;
+using AstJsonDump;
 using Core;
-using FParsecParser;
-using JavaScriptCodeGen;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Semantics;
@@ -18,19 +16,21 @@ namespace ConsoleApp
                 .AddLogging(cfg => cfg.AddConsole())
                 .Configure<LoggerFilterOptions>(cfg => cfg.MinLevel = LogLevel.Trace)
                 .Scan(x => x.FromAssemblies(
+                    Assembly.Load("Core"),
                     Assembly.Load("FParsecParser"),
                     Assembly.Load("AntlrParser"),
                     Assembly.Load("Semantics"),
-                    Assembly.Load("JavaScriptCodeGen")))
+                    Assembly.Load("JavaScriptCodeGen"),
+                    Assembly.Load("AstJsonDump")))
                 .BuildServiceProvider();
 
-            var compiler = new ToyCompiler()
+            var compiler = serviceProvider.GetRequiredService<ToyCompiler>()
                 .WithParser(serviceProvider.GetService<ToyAntlrParser>())
                 .WithSemantics(serviceProvider.GetService<ToyBasicSemantics>())
-                .WithCodeGen(serviceProvider.GetService<ToyJavaScriptCodeGen>())
+                .WithAstDump(serviceProvider.GetService<ToyAstJsonDump>())
                 .Build();
 
-            compiler(File.ReadAllText("basic.toy"));
+            compiler("class hello() { }");
         }
     }
 }

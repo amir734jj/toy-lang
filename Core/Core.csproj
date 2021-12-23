@@ -6,8 +6,15 @@
 
     <ItemGroup>
       <ProjectReference Include="..\AntlrParser\AntlrParser.csproj" />
+      <ProjectReference Include="..\AstJsonDump\AstJsonDump.csproj" />
       <ProjectReference Include="..\FParsecParser\FParsecParser.csproj" />
       <ProjectReference Include="..\Models\Models.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="basic.toy">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

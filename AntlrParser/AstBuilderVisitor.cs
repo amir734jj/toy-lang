@@ -116,12 +116,6 @@ namespace AntlrParser
         {
             if (context.VarToken() != null)
             {
-                var name = context.NameToken().First().GetText();
-                if (name == "diff")
-                {
-                    Console.WriteLine("here");
-                }
-                
                 return new VarDeclToken(
                     context.NameToken().First().GetText(),
                     context.NameToken().Last().GetText(),

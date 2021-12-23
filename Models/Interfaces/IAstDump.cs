@@ -1,6 +1,6 @@
 namespace Models.Interfaces
 {
-    public interface IToyCodeGen
+    public interface IAstDump
     {
         void CodeGen(Classes classes);
     }

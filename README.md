@@ -2,7 +2,7 @@
 Toy programming language
 
 TODO:
-- ~Anlr4~
+- ~Antlr4~
 - ~FParsec.Sharp~
 - ~Semantics~
 - MIPS

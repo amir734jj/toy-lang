@@ -1,5 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Text;
+using Core.Extensions;
 using Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Models.Interfaces;
@@ -8,10 +11,17 @@ namespace Core
 {
     public class ToyCompiler : IToyCompilerParser, IToyCompilerSemantic, IToyCompilerCodeGen, IToyCompilerBuild
     {
+        private readonly ILogger<ToyCompiler> _logger;
         private IToyParser _parser;
         private IToySemantics _semantics;
-        private IToyCodeGen _codeGen;
+        private IAstDump _astDump;
+        public static readonly MemoryStream BasicFileText = new(File.ReadAllBytes("basic.toy"));
 
+        public ToyCompiler(ILogger<ToyCompiler> logger)
+        {
+            _logger = logger;
+        }
+        
         public IToyCompilerSemantic WithParser(IToyParser parser)
         {
             _parser = parser;
@@ -25,21 +35,22 @@ namespace Core
             return this;
         }
 
-        public IToyCompilerBuild WithCodeGen(IToyCodeGen codeGen)
+        public IToyCompilerBuild WithAstDump(IAstDump astDump)
         {
-            _codeGen = codeGen;
+            _astDump = astDump;
             return this;
         }
 
         public Action<string> Build()
         {
-            return s =>
+            return code =>
             {
-                var ast = _parser.Parse(s);
-                File.WriteAllText($"/home/amir-pc/RiderProjects/toy-lang/Core/basic.{_parser.GetType().Name}", ast.ToString());
+                var ast = _parser.Parse(new ConcatenatedStream(
+                    BasicFileText,
+                    new MemoryStream(Encoding.Default.GetBytes(code))));
 
                 _semantics.Semant(ast);
-                _codeGen.CodeGen(ast);
+                _astDump.CodeGen(ast);
             };
         }
     }

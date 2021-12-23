@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using Antlr4.Runtime;
 using Microsoft.Extensions.Logging;
@@ -16,9 +17,9 @@ namespace AntlrParser
             _logger = logger;
         }
         
-        public Classes Parse(string text)
+        public Classes Parse(Stream stream)
         {
-            var str = CharStreams.fromString(text);
+            var str = CharStreams.fromStream(stream);
 
             var lexer = new CoolLexer(str);
             var tokens = new CommonTokenStream(lexer);
@@ -30,10 +31,15 @@ namespace AntlrParser
             lexer.AddErrorListener(listenerLexer);
             parser.AddErrorListener(listenerParser);
             
-            /*foreach (var token in lexer.GetAllTokens())
+            foreach (var token in lexer.GetAllTokens())
             {
-                Console.WriteLine($"[{lexer.Vocabulary.GetSymbolicName(token.Type)}] {token.Text}");
-            }*/
+                if (token.Channel == Lexer.DefaultTokenChannel)
+                {
+                    _logger.LogTrace("{%s}: {%s}", lexer.Vocabulary.GetSymbolicName(token.Type), token.Text);
+                }
+            }
+            
+            lexer.Reset();
 
             var tree = parser.classes();
             var visitor = new AstBuilderVisitor();

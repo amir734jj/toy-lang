@@ -1,7 +1,9 @@
+using System.IO;
+
 namespace Models.Interfaces
 {
     public interface IToyParser
     {
-        Classes Parse(string text);
+        Classes Parse(Stream text);
     }
 }

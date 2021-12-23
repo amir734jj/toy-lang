@@ -15,7 +15,7 @@ namespace Core.Interfaces
     
     public interface IToyCompilerCodeGen
     {
-        public IToyCompilerBuild WithCodeGen(IToyCodeGen codeGen);
+        public IToyCompilerBuild WithAstDump(IAstDump codeGen);
     }
     
     public interface IToyCompilerBuild

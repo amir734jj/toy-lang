@@ -62,9 +62,11 @@ namespace JavaScriptCodeGen
         {
             var prevJoinTokensWith = _joinTokensWith;
             
-            _joinTokensWith = ";\n";
+            _joinTokensWith = $";\n{MakeIndent(_indent)}";
 
-            var result = $"(() => {{ {MakeIndent(_indent + 1)}{Visit(blockToken.Tokens)} }})()";
+            var result = $"(() => {{\n" +
+                         $"{MakeIndent(_indent)}{Visit(blockToken.Tokens)}" +
+                         $"}})()";
 
             _joinTokensWith = prevJoinTokensWith;
             
@@ -176,24 +178,22 @@ namespace JavaScriptCodeGen
         {
             var parentClass = classToken.Inherits is ANY_TYPE or NOTHING_TYPE ? "Object" : classToken.Inherits;
 
-            var prevJoinTokensWith = _joinTokensWith;
-            
-            _joinTokensWith = ";\n    ";
-
-            _indent++;
+            _indent = 0;
+            _joinTokensWith = $"\n{MakeIndent(1)}";
             var features = Visit(classToken.Features);
-            _indent--;
+            
+            _indent = 0;
+            _joinTokensWith = ",";
+            var actuals = Visit(classToken.Actuals);
             
             var result =
                 $"class {classToken.Name} extends {parentClass} {{\n" +
-                $"{MakeIndent(1)}constructor {Visit(classToken.Formals)} {{\n" +
-                $"{MakeIndent(2)}super({string.Join(',', classToken.Actuals.Inner.Select(Visit))});\n" +
+                $"{MakeIndent(1)}constructor{Visit(classToken.Formals)} {{\n" +
+                $"{MakeIndent(2)}super({actuals});\n" +
                 $"{MakeIndent(1)}}}\n" +
                 $"{features}\n" +
                 $"}}";
 
-            _joinTokensWith = prevJoinTokensWith;
-            
             return result;
         }
 

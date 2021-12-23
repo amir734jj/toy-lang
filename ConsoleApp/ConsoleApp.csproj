@@ -12,12 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="basic.toy">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Scrutor.AspNetCore" Version="3.3.0" />
     </ItemGroup>
 

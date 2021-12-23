@@ -4,7 +4,7 @@ using Models.Interfaces;
 
 namespace JavaScriptCodeGen
 {
-    public class ToyJavaScriptCodeGen : IToyCodeGen
+    public class ToyJavaScriptCodeGen : IAstDump
     {
         public void CodeGen(Classes classes)
         {

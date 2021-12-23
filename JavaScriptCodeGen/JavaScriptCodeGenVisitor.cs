@@ -75,7 +75,7 @@ namespace JavaScriptCodeGen
             _joinTokensWith = $";\n{MakeIndent(_indent)}";
 
             var result = $"{GetReturnPrefix(blockToken)}{{\n" +
-                         $"\t{Visit(blockToken.Tokens)}" +
+                         $"\t{Visit(blockToken.Tokens)}\n" +
                          $"}}";
 
             _joinTokensWith = prevJoinTokensWith;

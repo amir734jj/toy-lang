@@ -5,6 +5,7 @@ using Antlr4.Runtime;
 using Microsoft.Extensions.Logging;
 using Models;
 using Models.Interfaces;
+using IToken = Antlr4.Runtime.IToken;
 
 namespace AntlrParser
 {

@@ -4,7 +4,7 @@ namespace Models
 {
     public abstract class Visitor<T> : IVisitor<T>
     {
-        public T Visit(Token token)
+        public T Visit(IToken token)
         {
             return token switch
             {

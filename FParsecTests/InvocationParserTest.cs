@@ -28,7 +28,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new FunctionCallToken("foo",
-                    new Tokens(ImmutableList<Token>.Empty.AsValueSemantics())), reply.Result);
+                    new Tokens(ImmutableList<IToken>.Empty.AsValueSemantics())), reply.Result);
         }
 
         [Theory]
@@ -49,7 +49,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new FunctionCallToken("foo",
-                    new Tokens(new List<Token> { new VariableToken("bar") }.AsValueSemantics())),
+                    new Tokens(new List<IToken> { new VariableToken("bar") }.AsValueSemantics())),
                 reply.Result);
         }
 
@@ -67,7 +67,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new FunctionCallToken("foo",
-                    new Tokens(new List<Token> { new VariableToken("bar"), new VariableToken("baz") }
+                    new Tokens(new List<IToken> { new VariableToken("bar"), new VariableToken("baz") }
                         .AsValueSemantics())), reply.Result);
         }
     }

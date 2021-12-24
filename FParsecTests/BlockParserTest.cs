@@ -67,7 +67,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             var blockToken = Assert.IsType<BlockToken>(reply.Result);
             Assert.Equal(
-                new Tokens(new List<Token> { new VariableToken("foo"), new VariableToken("bar") }.AsValueSemantics()),
+                new Tokens(new List<IToken> { new VariableToken("foo"), new VariableToken("bar") }.AsValueSemantics()),
                 blockToken.Tokens);
         }
     }

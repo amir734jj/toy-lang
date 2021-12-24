@@ -46,58 +46,58 @@ namespace FParsecParser
         ///   7) Unary: [-!] [Expression]
         ///   7) Variable: [Name]
         /// </summary>
-        public static FSharpFunc<CharStream<Unit>, Reply<Token>> Expression()
+        public static FSharpFunc<CharStream<Unit>, Reply<IToken>> Expression()
         {
             // [Atomic] = Number | Boolean | Null | String
-            FSharpFunc<CharStream<Unit>, Reply<Token>> Atomic(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            FSharpFunc<CharStream<Unit>, Reply<IToken>> Atomic(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 var quotedStringP = Wrap('"', Regex(@"(?:[^\\""]|\\.)*"), '"')
                     .Label("string")
-                    .Map(x => (Token)new AtomicToken(x));
+                    .Map(x => (IToken)new AtomicToken(x));
                 var numberP = Int
                     .Label("number")
-                    .Map(x => (Token)new AtomicToken(x));
+                    .Map(x => (IToken)new AtomicToken(x));
                 var boolP = StringP("true").Or(StringP("false"))
                     .Lbl("bool")
-                    .Map(x => (Token)new AtomicToken(x == "true"));
+                    .Map(x => (IToken)new AtomicToken(x == "true"));
                 var nullP = Skip("null")
                     .Label("null")
-                    .Return((Token)new AtomicToken(null));
+                    .Return((IToken)new AtomicToken(null));
                 var unitLiteral = Wrap('(', ')')
-                    .Return((Token)new AtomicToken(UNIT_SYMBOL_VALUE));
+                    .Return((IToken)new AtomicToken(UNIT_SYMBOL_VALUE));
 
                 var atomicP = Choice(nullP, numberP, quotedStringP, boolP, unitLiteral).Label("atomic");
 
                 return SkipComments(atomicP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Declaration(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Declaration(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Declaration
                 var declarationP = Skip("var").AndTry_(WS1).AndRTry(Name()).AndLTry(WS).AndLTry(Skip(':'))
                     .AndLTry(WS).AndTry(Name()).AndLTry(WS).AndLTry(Skip('=')).AndLTry(WS)
                     .AndTry(expressionRec)
                     .Label("decl")
-                    .Map(x => (Token)new VarDeclToken(x.Item1.Item1, x.Item1.Item2, x.Item2));
+                    .Map(x => (IToken)new VarDeclToken(x.Item1.Item1, x.Item1.Item2, x.Item2));
 
                 return SkipComments(declarationP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Assignment(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Assignment(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Assignment
                 var assignmentP = Name().AndLTry(WS).AndLTry(Skip('=')).AndLTry(WS).AndTry(expressionRec)
                     .Label("assign")
-                    .Map(x => (Token)new AssignToken(x.Item1, x.Item2));
+                    .Map(x => (IToken)new AssignToken(x.Item1, x.Item2));
 
                 return SkipComments(assignmentP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Conditional(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Conditional(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Conditional
                 var conditionalP = Skip("if").And_(WS)
@@ -106,13 +106,13 @@ namespace FParsecParser
                     .AndTry(expressionRec).AndTry(WS).AndLTry(Skip("else")).AndLTry(WS).AndTry(expressionRec)
                     .Label("cond")
                     .Map(x =>
-                        (Token)new CondToken(x.Item1.Item1, x.Item1.Item2, x.Item2));
+                        (IToken)new CondToken(x.Item1.Item1, x.Item1.Item2, x.Item2));
 
                 return SkipComments(conditionalP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> While(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> While(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // While
                 var conditionalP = Skip("while").AndTry_(WS)
@@ -121,35 +121,35 @@ namespace FParsecParser
                     .AndTry(expressionRec)
                     .Label("while")
                     .Map(x =>
-                        (Token)new WhileToken(x.Item1, x.Item2));
+                        (IToken)new WhileToken(x.Item1, x.Item2));
 
                 return SkipComments(conditionalP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Block(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Block(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Block
                 var blockExprP = SepBy('{', expressionRec, '}', Skip(';'), canEndWithSep: true, canBeEmpty: true)
                     .Label("block")
-                    .Map(x => (Token)new BlockToken(new Tokens(x)));
+                    .Map(x => (IToken)new BlockToken(new Tokens(x)));
 
                 return SkipComments(blockExprP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Variable(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Variable(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Variable
                 var variableP = Name()
                     .Label("variable")
-                    .Map(x => (Token)new VariableToken(x));
+                    .Map(x => (IToken)new VariableToken(x));
 
                 return SkipComments(variableP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Instantiation(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Instantiation(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Instantiation
                 var instantiationP = Skip("new")
@@ -157,44 +157,44 @@ namespace FParsecParser
                     .AndRTry(Name())
                     .AndTry(SepBy('(', expressionRec, ')', Skip(','), canBeEmpty: true, canEndWithSep: false))
                     .Label("instantiation")
-                    .Map(x => (Token)new InstantiationToken(x.Item1, new Tokens(x.Item2)));
+                    .Map(x => (IToken)new InstantiationToken(x.Item1, new Tokens(x.Item2)));
 
                 return SkipComments(instantiationP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> FunctionCall(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> FunctionCall(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Function call
                 var functionCallP = Name()
                     .AndTry(SepBy('(', expressionRec, ')', Skip(','), canBeEmpty: true, canEndWithSep: false))
                     .Label("functionCall")
-                    .Map(x => (Token)new FunctionCallToken(x.Item1, new Tokens(x.Item2)));
+                    .Map(x => (IToken)new FunctionCallToken(x.Item1, new Tokens(x.Item2)));
 
                 return SkipComments(functionCallP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Native(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Native(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 // Native keyword
                 var nativeP = Skip("native")
                     .Label("native")
-                    .Return((Token)new NativeToken());
+                    .Return((IToken)new NativeToken());
 
                 return SkipComments(nativeP);
             }
 
-            static FSharpFunc<CharStream<Unit>, Reply<Token>> Match(
-                FSharpFunc<CharStream<Unit>, Reply<Token>> expressionRec)
+            static FSharpFunc<CharStream<Unit>, Reply<IToken>> Match(
+                FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
                 var typeMatch = Name().AndLTry(WS).AndLTry(Skip(':')).AndLTry(WS).AndTry(Name()).AndLTry(WS)
                     .AndLTry(Skip("=>")).AndLTry(WS).AndTry(expressionRec)
-                    .Map(x => (ArmToken)new TypedArmToken(x.Item1.Item1, x.Item1.Item2, x.Item2))
+                    .Map(x => (IArmToken)new TypedArmToken(x.Item1.Item1, x.Item1.Item2, x.Item2))
                     .Label("typeBranch");
 
                 var nullMatch = Skip("null").AndTry_(WS).AndTry_(Skip("=>")).AndTry_(WS).AndRTry(expressionRec)
-                    .Map(x => (ArmToken)new NullArmToken(x))
+                    .Map(x => (IArmToken)new NullArmToken(x))
                     .Label("nullBranch");
 
                 var arm = Skip("case").AndTry_(WS1)
@@ -209,13 +209,13 @@ namespace FParsecParser
                     .AndLTry(WS)
                     .AndTry(arms)
                     .Label("match")
-                    .Map(x => (Token)new Match(x.Item1, new Arms(x.Item2.AsValueSemantics())));
+                    .Map(x => (IToken)new Match(x.Item1, new Arms(x.Item2.AsValueSemantics())));
 
                 return SkipComments(matchP);
             }
 
             // Source: https://en.wikipedia.org/wiki/Order_of_operations#Programming_languages
-            var expressionP = new OPPBuilder<Unit, Token, Unit>()
+            var expressionP = new OPPBuilder<Unit, IToken, Unit>()
                 .WithOperators(ops => ops
                     .AddInfix(".", 10, WS,
                         (x, y) => new AccessToken(x, Guard(y, y is FunctionCallToken)))
@@ -300,9 +300,9 @@ namespace FParsecParser
             return SkipWs(commentsP);
         }
 
-        public static FSharpFunc<CharStream<Unit>, Reply<IValueCollection<Token>>> Features()
+        public static FSharpFunc<CharStream<Unit>, Reply<IValueCollection<IToken>>> Features()
         {
-            var items = Choice(Function().Map(x => (Token)x), Expression())
+            var items = Choice(Function().Map(x => (IToken)x), Expression())
                 .Label("feature");
             var featureP = Many(items, sep: Choice(Skip(';')), canEndWithSep: true)
                 .Label("features")
@@ -370,7 +370,7 @@ namespace FParsecParser
                     x.Item1.Item1,
                     x.Item1.Item2,
                     ANY_TYPE,
-                    new Tokens(new List<Token>().AsValueSemantics()),
+                    new Tokens(new List<IToken>().AsValueSemantics()),
                     new Tokens(x.Item2)
                 ));
 
@@ -385,7 +385,7 @@ namespace FParsecParser
                     x.Item1.Item1,
                     x.Item1.Item2,
                     NOTHING_TYPE,
-                    new Tokens(new List<Token>().AsValueSemantics()),
+                    new Tokens(new List<IToken>().AsValueSemantics()),
                     new Tokens(x.Item2)
                 ));
 
@@ -449,7 +449,7 @@ namespace FParsecParser
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        private static T Guard<T>(T instance, bool check) where T : Token
+        private static T Guard<T>(T instance, bool check) where T : IToken
         {
             if (!check)
             {

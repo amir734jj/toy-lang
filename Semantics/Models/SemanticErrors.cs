@@ -7,15 +7,15 @@ namespace Semantics.Models
 {
     public class SemanticErrors
     {
-        private readonly List<(Token token, string error)> _errors = new();
+        private readonly List<(IToken token, string error)> _errors = new();
 
-        public Dictionary<Token, ReadOnlyCollection<string>> Collect()
+        public Dictionary<IToken, ReadOnlyCollection<string>> Collect()
         {
             return _errors.GroupBy(x => x.token, x => x.error)
                 .ToDictionary(x => x.Key, x => x.ToList().AsReadOnly());
         }
 
-        public Unit Error(Token token, string error)
+        public Unit Error(IToken token, string error)
         {
             _errors.Add((token, error));
 

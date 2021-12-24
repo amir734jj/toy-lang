@@ -27,7 +27,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(new InstantiationToken(
                     "Foo",
-                    new Tokens(new List<Token>().AsValueSemantics())),
+                    new Tokens(new List<IToken>().AsValueSemantics())),
                 reply.Result);
         }
         
@@ -49,7 +49,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(new InstantiationToken(
                     "Foo",
-                    new Tokens(new List<Token>{ new VariableToken("bar")}.AsValueSemantics())),
+                    new Tokens(new List<IToken>{ new VariableToken("bar")}.AsValueSemantics())),
                 reply.Result);
         }
         
@@ -72,7 +72,7 @@ namespace ParserTests
             Assert.Equal(new InstantiationToken(
                     "Foo",
                     new Tokens(
-                        new List<Token> { new VariableToken("bar"), new VariableToken("baz") }.AsValueSemantics())),
+                        new List<IToken> { new VariableToken("bar"), new VariableToken("baz") }.AsValueSemantics())),
                 reply.Result);
         }
     }

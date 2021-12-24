@@ -23,7 +23,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new AccessToken(new VariableToken("foo"),
-                    new FunctionCallToken("bar", new Tokens(new List<Token>().AsValueSemantics()))),
+                    new FunctionCallToken("bar", new Tokens(new List<IToken>().AsValueSemantics()))),
                 reply.Result);
         }
     }

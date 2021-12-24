@@ -159,7 +159,7 @@ namespace JavaScriptCodeGen
                 int number => number.ToString(),
                 bool boolean => boolean.ToString().ToLower(),
                 null => null,
-                UNIT_SYMBOL_VALUE => "{}",
+                UNIT_SYMBOL_VALUE => "new Unit()",
                 _ => throw new ArgumentOutOfRangeException()
             };
         }
@@ -264,7 +264,7 @@ namespace JavaScriptCodeGen
             return _currentVariable;
         }
 
-        private string GetReturnPrefix(Token token)
+        private string GetReturnPrefix(IToken token)
         {
             return _allReturnTokens.Contains(token.Id) ? "return " : string.Empty;
         }

@@ -2,7 +2,7 @@ namespace Models.Interfaces
 {
     public interface IVisitor<out T>
     {
-        public T Visit(Token token);
+        public T Visit(IToken token);
         public T Visit(NativeToken nativeToken);
         public T Visit(AssignToken assignToken);
         public T Visit(WhileToken whileToken);

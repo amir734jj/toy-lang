@@ -1,15 +1,28 @@
 using System;
+using Equ;
 using Models.Interfaces;
 
 namespace Models
 {
-    public class Token
+    public interface IToken
     {
+        [MemberwiseEqualityIgnore]
+        public Guid Id { get; }
+    }
+
+    public abstract class Token<T> : MemberwiseEquatable<T>, IToken 
+    {
+        public Token()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public Guid Id { get; }
     }
 
     #region Misc
 
-    public class CommentToken : Token
+    public class CommentToken : Token<CommentToken>
     {
         public CommentToken(string text)
         {
@@ -19,79 +32,79 @@ namespace Models
         public string Text { get; }
     }
 
-    public class CommentsToken : Token
+    public class CommentsToken : Token<CommentsToken>
     {
         public CommentsToken(IValueCollection<CommentToken> inner)
         {
             Inner = inner;
         }
 
-        public IValueCollection<CommentToken> Inner { get;  }
+        public IValueCollection<CommentToken> Inner { get; }
     }
 
     #endregion
 
     #region Singular
 
-    public class NativeToken : Token
+    public class NativeToken : Token<NativeToken>
     {
     }
 
-    public class AssignToken : Token
+    public class AssignToken : Token<AssignToken>
     {
-        public AssignToken(string variable, Token body)
+        public AssignToken(string variable, IToken body)
         {
             Variable = variable;
             Body = body;
         }
 
-        public string Variable { get;  }
-        public Token Body { get;  }
+        public string Variable { get; }
+        public IToken Body { get; }
     }
 
-    public class WhileToken : Token
+    public class WhileToken : Token<WhileToken>
     {
-        public WhileToken(Token condition, Token body)
+        public WhileToken(IToken condition, IToken body)
         {
             Condition = condition;
             Body = body;
         }
 
-        public Token Condition { get;  }
-        public Token Body { get;  }
+        public IToken Condition { get; }
+        public IToken Body { get; }
     }
 
-    public class CondToken : Token
+    public class CondToken : Token<CondToken>
     {
-        public CondToken(Token condition, Token ifToken, Token elseToken)
+        public CondToken(IToken condition, IToken ifToken, IToken elseToken)
         {
             Condition = condition;
             IfToken = ifToken;
             ElseToken = elseToken;
         }
 
-        public Token Condition { get;  }
-        public Token IfToken { get;  }
-        public Token ElseToken { get;  }
+        public IToken Condition { get; }
+        public IToken IfToken { get; }
+        public IToken ElseToken { get; }
     }
 
-    public class VarDeclToken : Token
+    public class VarDeclToken : Token<VarDeclToken>
     {
-        public VarDeclToken(string variable, string type, Token body)
+        public VarDeclToken(string variable, string type, IToken body)
         {
             Variable = variable;
             Type = type;
             Body = body;
         }
 
-        public string Variable { get;  }
-        public string Type { get;  }
-        public Token Body { get;  }
+        public string Variable { get; }
+        public string Type { get; }
+        public IToken Body { get; }
     }
 
-    public class FunctionDeclToken : Token
+    public class FunctionDeclToken : Token<FunctionDeclToken>
     {
-        public FunctionDeclToken(bool @override, string name, Formals formals, string type, Token body)
+        public FunctionDeclToken(bool @override, string name, Formals formals, string type, IToken body)
         {
             Override = @override;
             Name = name;
@@ -100,24 +113,24 @@ namespace Models
             Body = body;
         }
 
-        public bool Override { get;  }
-        public string Name { get;  }
-        public Formals Formals { get;  }
-        public string Type { get;  }
-        public Token Body { get;  }
+        public bool Override { get; }
+        public string Name { get; }
+        public Formals Formals { get; }
+        public string Type { get; }
+        public IToken Body { get; }
     }
 
-    public class BlockToken : Token
+    public class BlockToken : Token<BlockToken>
     {
         public BlockToken(Tokens tokens)
         {
             Tokens = tokens;
         }
 
-        public Tokens Tokens { get;  }
+        public Tokens Tokens { get; }
     }
 
-    public class FunctionCallToken : Token
+    public class FunctionCallToken : Token<FunctionCallToken>
     {
         public FunctionCallToken(string name, Tokens actuals)
         {
@@ -125,183 +138,183 @@ namespace Models
             Actuals = actuals;
         }
 
-        public string Name { get;  }
-        public Tokens Actuals { get;  }
+        public string Name { get; }
+        public Tokens Actuals { get; }
     }
 
-    public class NegateToken : Token
+    public class NegateToken : Token<NegateToken>
     {
-        public NegateToken(Token token)
+        public NegateToken(IToken token)
         {
             Token = token;
         }
 
-        public Token Token { get;  }
+        public IToken Token { get; }
     }
 
-    public class NotToken : Token
+    public class NotToken : Token<NotToken>
     {
-        public NotToken(Token token)
+        public NotToken(IToken token)
         {
             Token = token;
         }
 
-        public Token Token { get;  }
+        public IToken Token { get; }
     }
 
-    public class AddToken : Token
+    public class AddToken : Token<AddToken>
     {
-        public AddToken(Token left, Token right)
+        public AddToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class EqualsToken : Token
+    public class EqualsToken : Token<EqualsToken>
     {
-        public EqualsToken(Token left, Token right)
+        public EqualsToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class NotEqualsToken : Token
+    public class NotEqualsToken : Token<NotEqualsToken>
     {
-        public NotEqualsToken(Token left, Token right)
+        public NotEqualsToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class AndToken : Token
+    public class AndToken : Token<AndToken>
     {
-        public AndToken(Token left, Token right)
+        public AndToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class OrToken : Token
+    public class OrToken : Token<OrToken>
     {
-        public OrToken(Token left, Token right)
+        public OrToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class LessThanToken : Token
+    public class LessThanToken : Token<LessThanToken>
     {
-        public LessThanToken(Token left, Token right)
+        public LessThanToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class LessThanEqualsToken : Token
+    public class LessThanEqualsToken : Token<LessThanEqualsToken>
     {
-        public LessThanEqualsToken(Token left, Token right)
+        public LessThanEqualsToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class SubtractToken : Token
+    public class SubtractToken : Token<SubtractToken>
     {
-        public SubtractToken(Token left, Token right)
+        public SubtractToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class DivideToken : Token
+    public class DivideToken : Token<DivideToken>
     {
-        public DivideToken(Token left, Token right)
+        public DivideToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class MultiplyToken : Token
+    public class MultiplyToken : Token<MultiplyToken>
     {
-        public MultiplyToken(Token left, Token right)
+        public MultiplyToken(IToken left, IToken right)
         {
             Left = left;
             Right = right;
         }
 
-        public Token Left { get;  }
-        public Token Right { get;  }
+        public IToken Left { get; }
+        public IToken Right { get; }
     }
 
-    public class AtomicToken : Token
+    public class AtomicToken : Token<AtomicToken>
     {
         public AtomicToken(IConvertible value)
         {
             Value = value;
         }
 
-        public IConvertible Value { get;  }
+        public IConvertible Value { get; }
     }
 
-    public class VariableToken : Token
+    public class VariableToken : Token<VariableToken>
     {
         public VariableToken(string variable)
         {
             Variable = variable;
         }
 
-        public string Variable { get;  }
+        public string Variable { get; }
     }
 
-    public class AccessToken : Token
+    public class AccessToken : Token<AccessToken>
     {
-        public AccessToken(Token receiver, Token variable)
+        public AccessToken(IToken receiver, IToken variable)
         {
             Receiver = receiver;
             Variable = variable;
         }
 
-        public Token Receiver { get;  }
-        public Token Variable { get;  }
+        public IToken Receiver { get; }
+        public IToken Variable { get; }
     }
 
-    public class InstantiationToken : Token
+    public class InstantiationToken : Token<InstantiationToken>
     {
         public InstantiationToken(string @class, Tokens actuals)
         {
@@ -309,11 +322,11 @@ namespace Models
             Actuals = actuals;
         }
 
-        public string Class { get;  }
-        public Tokens Actuals { get;  }
+        public string Class { get; }
+        public Tokens Actuals { get; }
     }
 
-    public class Formal : Token
+    public class Formal : Token<Formal>
     {
         public Formal(string name, string type)
         {
@@ -321,11 +334,11 @@ namespace Models
             Type = type;
         }
 
-        public string Name { get;  }
-        public string Type { get;  }
+        public string Name { get; }
+        public string Type { get; }
     }
 
-    public class ClassToken : Token
+    public class ClassToken : Token<ClassToken>
     {
         public ClassToken(string name, Formals formals, string inherits, Tokens actuals, Tokens features)
         {
@@ -336,95 +349,95 @@ namespace Models
             Features = features;
         }
 
-        public string Name { get;  }
-        public Formals Formals { get;  }
-        public string Inherits { get;  }
-        public Tokens Actuals { get;  }
-        public Tokens Features { get;  }
+        public string Name { get; }
+        public Formals Formals { get; }
+        public string Inherits { get; }
+        public Tokens Actuals { get; }
+        public Tokens Features { get; }
     }
 
-    public class ArmToken : Token
+    public interface IArmToken : IToken
     {
     }
 
-    public class TypedArmToken : ArmToken
+    public class TypedArmToken : Token<TypedArmToken>, IArmToken
     {
-        public TypedArmToken(string name, string type, Token result)
+        public TypedArmToken(string name, string type, IToken result)
         {
             Name = name;
             Type = type;
             Result = result;
         }
 
-        public string Name { get;  }
-        public string Type { get;  }
-        public Token Result { get;  }
+        public string Name { get; }
+        public string Type { get; }
+        public IToken Result { get; }
     }
 
-    public class NullArmToken : ArmToken
+    public class NullArmToken : Token<NullArmToken>, IArmToken
     {
-        public NullArmToken(Token result)
+        public NullArmToken(IToken result)
         {
             Result = result;
         }
 
-        public Token Result { get;  }
+        public IToken Result { get; }
     }
 
-    public class Match : Token
+    public class Match : Token<Match>
     {
-        public Match(Token token, Arms arms)
+        public Match(IToken token, Arms arms)
         {
             Token = token;
             Arms = arms;
         }
 
-        public Token Token { get;  }
-        public Arms Arms { get;  }
+        public IToken Token { get; }
+        public Arms Arms { get; }
     }
 
     #endregion
-    
+
     #region SequenceToken
-    
-    public class Formals : Token
+
+    public class Formals : Token<Formals>
     {
         public Formals(IValueCollection<Formal> inner)
         {
             Inner = inner;
         }
 
-        public IValueCollection<Formal> Inner { get;  }
+        public IValueCollection<Formal> Inner { get; }
     }
 
-    public class Tokens : Token
+    public class Tokens : Token<Tokens>
     {
-        public Tokens(IValueCollection<Token> inner)
+        public Tokens(IValueCollection<IToken> inner)
         {
             Inner = inner;
         }
 
-        public IValueCollection<Token> Inner { get;  }
+        public IValueCollection<IToken> Inner { get; }
     }
 
-    public class Classes : Token
+    public class Classes : Token<Classes>
     {
         public Classes(IValueCollection<ClassToken> inner)
         {
             Inner = inner;
         }
 
-        public IValueCollection<ClassToken> Inner { get;  }
+        public IValueCollection<ClassToken> Inner { get; }
     }
 
-    public class Arms : Token
+    public class Arms : Token<Arms>
     {
-        public Arms(IValueCollection<ArmToken> inner)
+        public Arms(IValueCollection<IArmToken> inner)
         {
             Inner = inner;
         }
 
-        public IValueCollection<ArmToken> Inner { get;  }
+        public IValueCollection<IArmToken> Inner { get; }
     }
 
     #endregion

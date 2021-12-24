@@ -18,7 +18,7 @@ namespace ParserTests
 
             // Assert
             Assert.True(reply.IsOk());
-            Assert.Equal(new Match(new VariableToken("foo"), new Arms(new List<ArmToken>
+            Assert.Equal(new Match(new VariableToken("foo"), new Arms(new List<IArmToken>
             {
                 new NullArmToken(new AtomicToken(null))
             }.AsValueSemantics())), reply.Result);

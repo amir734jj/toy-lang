@@ -21,7 +21,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new ClassToken("Foo", new Formals(new List<Formal>().AsValueSemantics()), NOTHING_TYPE,
-                    new Tokens(new List<Token>().AsValueSemantics()), new Tokens(new List<Token>().AsValueSemantics()))
+                    new Tokens(new List<IToken>().AsValueSemantics()), new Tokens(new List<IToken>().AsValueSemantics()))
                 , reply.Result);
         }
         
@@ -36,7 +36,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new ClassToken("Foo", new Formals(new List<Formal>().AsValueSemantics()), "Bar",
-                    new Tokens(new List<Token>().AsValueSemantics()), new Tokens(new List<Token>().AsValueSemantics()))
+                    new Tokens(new List<IToken>().AsValueSemantics()), new Tokens(new List<IToken>().AsValueSemantics()))
                 , reply.Result);
         }
 
@@ -51,7 +51,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new ClassToken("Foo", new Formals(new List<Formal>().AsValueSemantics()), ANY_TYPE,
-                    new Tokens(new List<Token>().AsValueSemantics()), new Tokens(new List<Token>().AsValueSemantics()))
+                    new Tokens(new List<IToken>().AsValueSemantics()), new Tokens(new List<IToken>().AsValueSemantics()))
                 , reply.Result);
         }
         
@@ -66,7 +66,7 @@ namespace ParserTests
             Assert.True(reply.IsOk());
             Assert.Equal(
                 new ClassToken("Foo", new Formals(new List<Formal>{new("baz", "Int")}.AsValueSemantics()), "Bar",
-                    new Tokens(new List<Token>{new VariableToken("baz")}.AsValueSemantics()), new Tokens(new List<Token>().AsValueSemantics()))
+                    new Tokens(new List<IToken>{new VariableToken("baz")}.AsValueSemantics()), new Tokens(new List<IToken>().AsValueSemantics()))
                 , reply.Result);
         }
     }

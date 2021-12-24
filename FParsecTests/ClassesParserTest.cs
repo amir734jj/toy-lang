@@ -22,9 +22,9 @@ namespace ParserTests
             Assert.Equal(new Classes(new List<ClassToken>
             {
                 new("Foo", new Formals(new List<Formal>().AsValueSemantics()), NOTHING_TYPE,
-                    new Tokens(new List<Token>().AsValueSemantics()), new Tokens(new List<Token>().AsValueSemantics())),
+                    new Tokens(new List<IToken>().AsValueSemantics()), new Tokens(new List<IToken>().AsValueSemantics())),
                 new("Bar", new Formals(new List<Formal>().AsValueSemantics()), NOTHING_TYPE,
-                    new Tokens(new List<Token>().AsValueSemantics()), new Tokens(new List<Token>().AsValueSemantics()))
+                    new Tokens(new List<IToken>().AsValueSemantics()), new Tokens(new List<IToken>().AsValueSemantics()))
             }.AsValueSemantics()), reply.Result);
         }
     }

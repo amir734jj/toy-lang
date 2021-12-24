@@ -8,9 +8,9 @@ namespace Semantics
 {
     internal class SemanticsVisitor : Visitor<Unit>
     {
-        private Contour<string, Token> _variableContour = new();
+        private Contour<string, IToken> _variableContour = new();
 
-        private Contour<Token, string> _typeContour = new();
+        private Contour<IToken, string> _typeContour = new();
 
         private readonly Dictionary<string, string> _hierarchy = new();
 

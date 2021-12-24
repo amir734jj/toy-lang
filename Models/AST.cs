@@ -1,11 +1,13 @@
 using System;
 using Equ;
 using Models.Interfaces;
+using Newtonsoft.Json;
 
 namespace Models
 {
     public interface IToken
     {
+        [JsonIgnore]
         [MemberwiseEqualityIgnore]
         public Guid Id { get; }
     }
@@ -15,9 +17,12 @@ namespace Models
         public Token()
         {
             Id = Guid.NewGuid();
+            Type = GetType().Name;
         }
 
         public Guid Id { get; }
+        
+        public string Type { get; }
     }
 
     #region Misc
@@ -304,14 +309,14 @@ namespace Models
 
     public class AccessToken : Token<AccessToken>
     {
-        public AccessToken(IToken receiver, IToken variable)
+        public AccessToken(IToken receiver, FunctionCallToken functionCall)
         {
             Receiver = receiver;
-            Variable = variable;
+            FunctionCall = functionCall;
         }
 
         public IToken Receiver { get; }
-        public IToken Variable { get; }
+        public FunctionCallToken FunctionCall { get; }
     }
 
     public class InstantiationToken : Token<InstantiationToken>

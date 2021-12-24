@@ -15,4 +15,10 @@
       <PackageReference Include="Scrutor.AspNetCore" Version="3.3.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="fibonacci.toy">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

@@ -16,7 +16,7 @@ namespace AstJsonDump
         
         public void CodeGen(Classes classes)
         {
-            _logger.LogInformation("{}", JsonConvert.SerializeObject(classes, Formatting.Indented));
+            _logger.LogTrace("{}", JsonConvert.SerializeObject(classes, Formatting.Indented));
         }
     }
 }

@@ -55,12 +55,6 @@ class IO() {
 
   /** Return the string associated with this symbol. */
   def symbol_name(sym : Symbol) : String = native;
-
-  /** Return the number of arguments from the command line */
-  def getArgC() : Int = native;
-
-  /** Return the argument from the command line. 0 = first argument */
-  def getArg(i : Int) : String = native;
 }
 
 /** A class with no subclasses and which has only one instance.

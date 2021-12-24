@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.IO;
+using System.Reflection;
 using AntlrParser;
 using AstJsonDump;
 using Core;
@@ -15,7 +16,7 @@ namespace ConsoleApp
         {
             var serviceProvider = new ServiceCollection()
                 .AddLogging(cfg => cfg.AddConsole())
-                .Configure<LoggerFilterOptions>(cfg => cfg.MinLevel = LogLevel.Error)
+                .Configure<LoggerFilterOptions>(cfg => cfg.MinLevel = LogLevel.Information)
                 .Scan(x => x.FromAssemblies(
                     Assembly.Load("Core"),
                     Assembly.Load("FParsecParser"),
@@ -31,7 +32,17 @@ namespace ConsoleApp
                 .WithAstDump(serviceProvider.GetService<ToyJavaScriptCodeGen>())
                 .Build();
 
-            compiler("class hello() { }");
+            // compiler(File.ReadAllText("fibonacci.toy"));
+            compiler(@"class Amir() extends IO() {
+                        {
+                            out(
+                              ""[""
+                                .concat(""]"")
+                                .concat(""expected: "")
+                                .concat("" but received: "")
+                            )
+                         }
+                    }");
         }
     }
 }

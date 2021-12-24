@@ -21,6 +21,8 @@ namespace Models
         
         public const string SYMBOL_TYPE = "Symbol";
 
+        public const string IO_TYPE = "IO";
+        
         public const string THIS_VAR = "this";
     }
 }

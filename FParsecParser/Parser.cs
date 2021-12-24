@@ -218,7 +218,7 @@ namespace FParsecParser
             var expressionP = new OPPBuilder<Unit, IToken, Unit>()
                 .WithOperators(ops => ops
                     .AddInfix(".", 10, WS,
-                        (x, y) => new AccessToken(x, Guard(y, y is FunctionCallToken)))
+                        (x, y) => new AccessToken(x, (FunctionCallToken)Guard(y, y is FunctionCallToken)))
                     .AddPrefix("-", 9, WS, token => new NegateToken(token))
                     .AddPrefix("!", 9, WS, token => new NotToken(token))
                     .AddInfix("*", 8, WS, (x, y) => new MultiplyToken(x, y))

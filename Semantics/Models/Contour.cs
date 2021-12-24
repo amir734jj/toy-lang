@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,6 +19,10 @@ namespace Semantics.Models
 
         public void Update(TKey name, TValue token)
         {
+            if (token == null)
+            {
+                Console.WriteLine("token");
+            }
             _table[name] = token;
         }
         

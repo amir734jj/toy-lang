@@ -19,7 +19,9 @@ namespace JavaScriptCodeGen
         private HashSet<Guid> _allReturnTokens = new();
 
         private readonly Stack<string> _returnVariable = new();
-        private string currentClassName;
+        
+        private List<string> _scoped = new();
+        private bool beingAccessed = false;
 
         public override string Visit(AndToken andToken)
         {
@@ -62,7 +64,11 @@ namespace JavaScriptCodeGen
 
         public override string Visit(VarDeclToken varDeclToken)
         {
-            return $"{GetReturnPrefix(varDeclToken)}var {varDeclToken.Variable} = {Visit(varDeclToken.Body)};";
+            var variableName = _scoped.Contains(varDeclToken.Variable)
+                ? $"this.{varDeclToken.Variable}"
+                : varDeclToken.Variable;
+            
+            return $"{GetReturnPrefix(varDeclToken)}var {variableName} = {Visit(varDeclToken.Body)};";
         }
 
         public override string Visit(FunctionDeclToken functionDeclToken)
@@ -70,20 +76,10 @@ namespace JavaScriptCodeGen
             var returnVar = MakeVariable();
             var body = Visit(functionDeclToken.Body);
             
+            // Native stuff should be dumped manually
             if (functionDeclToken.Body is NativeToken)
             {
-                var formal = functionDeclToken.Formals.Inner.FirstOrDefault()?.Name;
-                body = functionDeclToken.Name switch
-                {
-                    "toString" when currentClassName == "any" => "this.toString()",
-                    "equals" when currentClassName == "Any" =>
-                        $"this == ${formal}",
-                    "abort" => @"throw new Error(""stopped"")",
-                    "out" => $"console.log({formal})",
-                    "in" => "prompt()",
-                    "symbol" => ""
-                    
-                };
+                throw new NotImplementedException();
             }
             
             var result = $"{functionDeclToken.Name}{Visit(functionDeclToken.Formals)} {{ \n" +
@@ -123,8 +119,14 @@ namespace JavaScriptCodeGen
                 _returnVariable.Pop();
             }
 
+            var functionName = functionCallToken.Name;
+            if (!this.beingAccessed && _scoped.Contains(functionCallToken.Name))
+            {
+                functionName = "this." + functionName;
+            }
+
             var result = $"{actualCode}\n" +
-                         $"{GetReturnPrefix(functionCallToken)}{functionCallToken.Name}({string.Join(',', actualsVars)})";
+                         $"{GetReturnPrefix(functionCallToken)}{functionName}({string.Join(',', actualsVars)})";
 
             return result;
         }
@@ -199,7 +201,11 @@ namespace JavaScriptCodeGen
 
         public override string Visit(AccessToken accessToken)
         {
-            return $"{Visit(accessToken.Receiver)}.{Visit(accessToken.Variable)}";
+            var lhs = Visit(accessToken.Receiver);
+            beingAccessed = true;
+            var rhs = Visit(accessToken.Variable);
+            beingAccessed = false;
+            return $"{lhs}.{rhs}";
         }
 
         public override string Visit(InstantiationToken instantiationToken)
@@ -215,7 +221,16 @@ namespace JavaScriptCodeGen
 
         public override string Visit(ClassToken classToken)
         {
-            this.currentClassName = classToken.Name;
+            foreach (var formal in classToken.Formals.Inner)
+            {
+                _scoped.Add(formal.Name);
+            }
+            
+            foreach (var functionDeclToken in classToken.Features.Inner.Where(x => x is FunctionDeclToken).Cast<FunctionDeclToken>())
+            {
+                _scoped.Add(functionDeclToken.Name);
+            }
+            
             var parentClass = classToken.Inherits is ANY_TYPE or NOTHING_TYPE ? "Object" : classToken.Inherits;
 
             _indent = 0;
@@ -233,6 +248,8 @@ namespace JavaScriptCodeGen
                 $"{MakeIndent(1)}}}\n" +
                 $"{features}\n" +
                 $"}}";
+
+            _scoped = new();
 
             return result;
         }

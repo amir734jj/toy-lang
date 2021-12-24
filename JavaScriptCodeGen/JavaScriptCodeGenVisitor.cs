@@ -18,7 +18,8 @@ namespace JavaScriptCodeGen
 
         private HashSet<Guid> _allReturnTokens = new();
 
-        private string _currentVariable = null;
+        private readonly Stack<string> _returnVariable = new();
+        private string currentClassName;
 
         public override string Visit(AndToken andToken)
         {
@@ -43,16 +44,20 @@ namespace JavaScriptCodeGen
         public override string Visit(WhileToken whileToken)
         {
             return $"while ({Visit(whileToken.Condition)}) {{\n" +
-                   $"\t{Visit(whileToken.Body)} \n" +
+                   $"\t {Visit(whileToken.Body)} \n" +
                    $"}}";
         }
 
         public override string Visit(CondToken condToken)
         {
-            return $"if ({Visit(condToken.Condition)})\n" +
-                   $"{Visit(condToken.IfToken)}\n " +
-                   $"else\n" +
-                   $"{Visit(condToken.ElseToken)}";
+            var returnVar = MakeVariable();
+            var result = $"var {returnVar}; \n" +
+                         $"if ({Visit(condToken.Condition)}) \n" +
+                         $"\t {Visit(condToken.IfToken)} \n" +
+                         $"else \n" +
+                         $"\t {Visit(condToken.ElseToken)}";
+            _returnVariable.Pop();
+            return result;
         }
 
         public override string Visit(VarDeclToken varDeclToken)
@@ -62,10 +67,31 @@ namespace JavaScriptCodeGen
 
         public override string Visit(FunctionDeclToken functionDeclToken)
         {
-
-            return $"{functionDeclToken.Name}{Visit(functionDeclToken.Formals)} {{\n" +
-                   $"\t{Visit(functionDeclToken.Body)}\n" +
-                   $"}}";
+            var returnVar = MakeVariable();
+            var body = Visit(functionDeclToken.Body);
+            
+            if (functionDeclToken.Body is NativeToken)
+            {
+                var formal = functionDeclToken.Formals.Inner.FirstOrDefault()?.Name;
+                body = functionDeclToken.Name switch
+                {
+                    "toString" when currentClassName == "any" => "this.toString()",
+                    "equals" when currentClassName == "Any" =>
+                        $"this == ${formal}",
+                    "abort" => @"throw new Error(""stopped"")",
+                    "out" => $"console.log({formal})",
+                    "in" => "prompt()",
+                    "symbol" => ""
+                    
+                };
+            }
+            
+            var result = $"{functionDeclToken.Name}{Visit(functionDeclToken.Formals)} {{ \n" +
+                         $"\t {body} \n" +
+                         $"\t return {returnVar}; \n" +
+                         $"}}";
+            _returnVariable.Pop();
+            return result;
         }
 
         public override string Visit(BlockToken blockToken)
@@ -74,8 +100,8 @@ namespace JavaScriptCodeGen
             
             _joinTokensWith = $";\n{MakeIndent(_indent)}";
 
-            var result = $"{GetReturnPrefix(blockToken)}{{\n" +
-                         $"\t{Visit(blockToken.Tokens)}\n" +
+            var result = $"{GetReturnPrefix(blockToken)}{{ \n" +
+                         $"\t{Visit(blockToken.Tokens)} \n" +
                          $"}}";
 
             _joinTokensWith = prevJoinTokensWith;
@@ -85,19 +111,21 @@ namespace JavaScriptCodeGen
 
         public override string Visit(FunctionCallToken functionCallToken)
         {
-            var prevJoinTokensWith = _joinTokensWith;
-            
             _joinTokensWith = ",";
 
-            var prevIndent = _indent;
-            _indent = 0;
-
-            var result =
-                $"{GetReturnPrefix(functionCallToken)}{functionCallToken.Name}({Visit(functionCallToken.Actuals)})";
-
-            _indent = prevIndent;
-            _joinTokensWith = prevJoinTokensWith;
+            var actualCode = string.Empty;
+            var actualsVars = new List<string>();
             
+            foreach (var actual in functionCallToken.Actuals.Inner)
+            {
+                actualsVars.Add(MakeVariable());
+                actualCode += Visit(actual) + ";\n";
+                _returnVariable.Pop();
+            }
+
+            var result = $"{actualCode}\n" +
+                         $"{GetReturnPrefix(functionCallToken)}{functionCallToken.Name}({string.Join(',', actualsVars)})";
+
             return result;
         }
 
@@ -187,6 +215,7 @@ namespace JavaScriptCodeGen
 
         public override string Visit(ClassToken classToken)
         {
+            this.currentClassName = classToken.Name;
             var parentClass = classToken.Inherits is ANY_TYPE or NOTHING_TYPE ? "Object" : classToken.Inherits;
 
             _indent = 0;
@@ -210,15 +239,15 @@ namespace JavaScriptCodeGen
 
         public override string Visit(TypedArmToken typedArmToken)
         {
-            return $"if ({_currentVariable} instanceof {typedArmToken.Type}) {{\n" +
-                   $"var {typedArmToken.Name} = {_currentVariable}\n" +
+            return $"if ({_returnVariable} instanceof {typedArmToken.Type}) {{\n" +
+                   $"var {typedArmToken.Name} = {_returnVariable}\n" +
                    $"{Visit(typedArmToken.Result)}\n" +
                    $"}}";
         }
 
         public override string Visit(NullArmToken nullArmToken)
         {
-            return $"if ({_currentVariable} === null) {{\n" +
+            return $"if ({_returnVariable.Peek()} === null) {{\n" +
                    $"{Visit(nullArmToken.Result)}\n" +
                    $"}}";
         }
@@ -243,8 +272,13 @@ namespace JavaScriptCodeGen
 
         public override string Visit(Match match)
         {
-            return $"var {MakeVariable()} = {Visit(match.Token)};\n" +
-                   $"{Visit(match.Arms)}";
+            var returnVar = MakeVariable();
+            var result = $"var {returnVar} = {Visit(match.Token)};\n" +
+                         $"{Visit(match.Arms)}";
+
+            _returnVariable.Pop();
+
+            return result;
         }
 
         public override string Visit(Arms arms)
@@ -259,14 +293,14 @@ namespace JavaScriptCodeGen
 
         private string MakeVariable()
         {
-            _currentVariable = "randomAutoGeneratedVariable" + _randomVariableSeed;
+            _returnVariable.Push("randomAutoGeneratedVariable" + _randomVariableSeed);
             _randomVariableSeed++;
-            return _currentVariable;
+            return _returnVariable.Peek();
         }
 
         private string GetReturnPrefix(IToken token)
         {
-            return _allReturnTokens.Contains(token.Id) ? "return " : string.Empty;
+            return _allReturnTokens.Contains(token.Id) ? $"{_returnVariable.Peek()} = " : string.Empty;
         }
     }
 }

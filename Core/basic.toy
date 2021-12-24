@@ -203,11 +203,3 @@ class ArrayAny(length : Int) {
   def set(index : Int, obj : Any) : Any = native;
 }
 
-
-/** Statistics gathering for SPIM.  These only work with spim-8.0 and
-   later with JTB stats extensions. */
-class Statistics() extends IO() {
-  def clear() : Statistics = native;
-  def get(i : Int) : Int = native;
-  def print() : Statistics = native;
-}

@@ -5,7 +5,7 @@ TODO:
 - ~Antlr4~
 - ~FParsec.Sharp~
 - ~Semantics~
+- ~JavaScript~
 - MIPS
-- JavaScript
 - .NET IL
 - LLVM

@@ -90,29 +90,21 @@ namespace JavaScriptCodeGen
 
         public override string Visit(BlockToken blockToken)
         {
-            var prevJoinTokensWith = _joinTokensWith;
-            
-            _joinTokensWith = $";\n{MakeIndent(_indent)}";
+            if (blockToken.Tokens.Inner.Any())
+            {
+                return $"{GetReturnPrefix(blockToken)}(() => {{ \n" +
+                       $"\t{Visit(blockToken.Tokens)} \n" +
+                       $"}}).bind(this)()";
+            }
 
-            var result = $"{GetReturnPrefix(blockToken)}(() => {{ \n" +
-                         $"\t{Visit(blockToken.Tokens)} \n" +
-                         $"}}).bind(this)()";
-
-            _joinTokensWith = prevJoinTokensWith;
-            
-            return result;
+            return "new Unit()";
         }
 
         public override string Visit(FunctionCallToken functionCallToken)
         {
             _joinTokensWith = ",";
 
-            var actualCode = new List<string>();
-
-            foreach (var actual in functionCallToken.Actuals.Inner)
-            {
-                actualCode.Add(Visit(actual));
-            }
+            var actualCode = functionCallToken.Actuals.Inner.Select(Visit).ToList();
 
             var functionName = functionCallToken.Name;
             if (!_beingAccessed && _scoped[_currentClassName].Contains(functionCallToken.Name))
@@ -249,8 +241,8 @@ namespace JavaScriptCodeGen
 
         public override string Visit(TypedArmToken typedArmToken)
         {
-            return $"(({_returnVariable} instanceof {TypeRename(typedArmToken.Type)} && " +
-                   $"(var {typedArmToken.Name} = {_returnVariable})) ? " +
+            return $"((({_returnVariable.Peek()} instanceof {TypeRename(typedArmToken.Type)}) && " +
+                   $"(var {typedArmToken.Name} = {_returnVariable.Peek()})) ? " +
                    $"{Visit(typedArmToken.Result)}";
         }
 

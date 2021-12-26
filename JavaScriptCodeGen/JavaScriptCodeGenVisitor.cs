@@ -15,7 +15,7 @@ namespace JavaScriptCodeGen
 
         private int _randomVariableSeed = 100;
 
-        private HashSet<Guid> _allReturnTokens = new();
+        private HashSet<(Guid, IToken)> _allReturnTokens = new();
 
         private readonly Stack<string> _returnVariable = new();
 
@@ -27,7 +27,7 @@ namespace JavaScriptCodeGen
         private readonly Dictionary<string, List<string>> _scoped = new();
 
         private string _currentClassName = "";
-        private ReturnExpressionVisitor returnFinder = new ReturnExpressionVisitor();
+        private readonly ReturnExpressionVisitor _returnFinder = new();
 
         public override string Visit(AndToken andToken)
         {
@@ -58,13 +58,7 @@ namespace JavaScriptCodeGen
 
         public override string Visit(CondToken condToken)
         {
-            var returnVar = MakeVariable();
-            var result = $"var {returnVar}; \n" +
-                         $"if ({Visit(condToken.Condition)}) \n" +
-                         $"\t {Visit(condToken.IfToken)} \n" +
-                         $"else \n" +
-                         $"\t {Visit(condToken.ElseToken)}";
-            _returnVariable.Pop();
+            var result = $"{GetReturnPrefix(condToken)}(({Visit(condToken.Condition)}) ? ({Visit(condToken.IfToken)}) : ({Visit(condToken.ElseToken)}))";
             return result;
         }
 
@@ -72,14 +66,13 @@ namespace JavaScriptCodeGen
         {
             var variableName = _scoped[_currentClassName].Contains(varDeclToken.Variable)
                 ? $"this.{varDeclToken.Variable}"
-                : varDeclToken.Variable;
+                : $"var {varDeclToken.Variable}";
             
-            return $"{GetReturnPrefix(varDeclToken)}var {variableName} = {Visit(varDeclToken.Body)};";
+            return $"{GetReturnPrefix(varDeclToken)}{variableName} = {Visit(varDeclToken.Body)};";
         }
 
         public override string Visit(FunctionDeclToken functionDeclToken)
         {
-            var returnVar = MakeVariable();
             var body = Visit(functionDeclToken.Body);
             
             // Native stuff should be dumped manually
@@ -90,9 +83,8 @@ namespace JavaScriptCodeGen
             
             var result = $"{functionDeclToken.Name}{Visit(functionDeclToken.Formals)} {{ \n" +
                          $"\t {body} \n" +
-                         $"\t return {returnVar}; \n" +
                          $"}}";
-            _returnVariable.Pop();
+
             return result;
         }
 
@@ -102,9 +94,9 @@ namespace JavaScriptCodeGen
             
             _joinTokensWith = $";\n{MakeIndent(_indent)}";
 
-            var result = $"{GetReturnPrefix(blockToken)}{{ \n" +
+            var result = $"{GetReturnPrefix(blockToken)}(() => {{ \n" +
                          $"\t{Visit(blockToken.Tokens)} \n" +
-                         $"}}";
+                         $"}}).bind(this)()";
 
             _joinTokensWith = prevJoinTokensWith;
             
@@ -115,15 +107,11 @@ namespace JavaScriptCodeGen
         {
             _joinTokensWith = ",";
 
-            var actualCode = string.Empty;
-            var actualsVars = new List<string>();
-            
+            var actualCode = new List<string>();
+
             foreach (var actual in functionCallToken.Actuals.Inner)
             {
-                var returnVar = MakeVariable();
-                actualsVars.Add(returnVar);
-                actualCode += $"var {returnVar} = {Visit(actual)};\n";
-                _returnVariable.Pop();
+                actualCode.Add(Visit(actual));
             }
 
             var functionName = functionCallToken.Name;
@@ -132,8 +120,7 @@ namespace JavaScriptCodeGen
                 functionName = "this." + functionName;
             }
 
-            var result = $"{actualCode}\n" +
-                         $"{GetReturnPrefix(functionCallToken)}{functionName}({string.Join(',', actualsVars)})";
+            var result = $"{GetReturnPrefix(functionCallToken)}{functionName}({string.Join(',', actualCode)})";
 
             return result;
         }
@@ -203,28 +190,25 @@ namespace JavaScriptCodeGen
 
         public override string Visit(VariableToken variableToken)
         {
-            return $"{variableToken.Variable}";
+            return _scoped.ContainsKey(variableToken.Variable)
+                ? $"this.{variableToken.Variable}"
+                : $"{variableToken.Variable}";
         }
 
         public override string Visit(AccessToken accessToken)
         {
-            var lhsReturnVar = MakeVariable();
             var lhs = Visit(accessToken.Receiver);
-            
-            var rhsReturnVar = MakeVariable();
             _beingAccessed = true;
             var rhs = Visit(accessToken.FunctionCall);
             _beingAccessed = false;
             
-            return $"var {lhsReturnVar} = {lhs}\n" +
-                   $"var {rhsReturnVar} = {rhs}\n" +
-                   $"{lhsReturnVar}.{rhsReturnVar}";
+            return $"{lhs}.{rhs}";
         }
 
         public override string Visit(InstantiationToken instantiationToken)
         {
             return
-                $"new {TypeRename(instantiationToken.Class)}({string.Join(',', instantiationToken.Actuals.Inner.Select(Visit))}))";
+                $"new {TypeRename(instantiationToken.Class)}({string.Join(',', instantiationToken.Actuals.Inner.Select(Visit))})";
         }
 
         public override string Visit(Formal formal)
@@ -240,21 +224,19 @@ namespace JavaScriptCodeGen
             }
 
             _currentClassName = classToken.Name;
-            var extendsPrefix = classToken.Inherits != ANY_TYPE ? $"extends {TypeRename(classToken.Inherits)}" : "";
+            var extendsPrefix = classToken.Inherits != NOTHING_TYPE ? $"extends {TypeRename(classToken.Inherits)}" : "";
 
             _indent = 0;
             _joinTokensWith = $"\n{MakeIndent(1)}";
-            var methods = string.Join('\n', classToken.Features.Inner.Where(x => x is FunctionDeclToken));
-            var insideConstructor = string.Join('\n', classToken.Features.Inner.Where(x => x is not FunctionDeclToken).Select(Visit));
-            
-            _indent = 0;
-            _joinTokensWith = ",";
+
             var actuals = Visit(classToken.Actuals);
+            var insideConstructor = string.Join(";\n", new[]{$"super({actuals})"}.Concat(classToken.Features.Inner.Where(x => x is not FunctionDeclToken).Select(Visit)));
+
+            var methods = string.Join('\n', classToken.Features.Inner.Where(x => x is FunctionDeclToken).Select(Visit));
 
             var result =
                 $"class {classToken.Name} {extendsPrefix} {{\n" +
                 $"{MakeIndent(1)}constructor{Visit(classToken.Formals)} {{\n" +
-                $"{MakeIndent(2)}super({actuals});\n" +
                 $"{insideConstructor}\n" +
                 $"{MakeIndent(1)}}}\n" +
                 $"{methods}\n" +
@@ -267,17 +249,14 @@ namespace JavaScriptCodeGen
 
         public override string Visit(TypedArmToken typedArmToken)
         {
-            return $"if ({_returnVariable} instanceof {TypeRename(typedArmToken.Type)}) {{\n" +
-                   $"var {typedArmToken.Name} = {_returnVariable}\n" +
-                   $"{Visit(typedArmToken.Result)}\n" +
-                   $"}}";
+            return $"(({_returnVariable} instanceof {TypeRename(typedArmToken.Type)} && " +
+                   $"(var {typedArmToken.Name} = {_returnVariable})) ? " +
+                   $"{Visit(typedArmToken.Result)}";
         }
 
         public override string Visit(NullArmToken nullArmToken)
         {
-            return $"if ({_returnVariable.Peek()} === null) {{\n" +
-                   $"{Visit(nullArmToken.Result)}\n" +
-                   $"}}";
+            return $"(({_returnVariable.Peek()} === null) ? {Visit(nullArmToken.Result)}";
         }
 
         public override string Visit(Formals formals)
@@ -292,9 +271,11 @@ namespace JavaScriptCodeGen
 
         public override string Visit(Classes classes)
         {
+            bool dumpMainCall = false;
             // Collect methods
             foreach (var classToken in classes.Inner)
             {
+                dumpMainCall |= classToken.Name == "Driver";
                 var parentMethods = new List<string>();
                 if (classToken.Inherits != NOTHING_TYPE)
                 {
@@ -317,16 +298,24 @@ namespace JavaScriptCodeGen
                 _scoped[classToken.Name] = classDeclMethods;
             }
             
-            _allReturnTokens = returnFinder.Visit(classes).ToHashSet();
+            _allReturnTokens = _returnFinder.Visit(classes).ToHashSet();
             
-            return string.Join('\n', classes.Inner.Select(Visit));
+            var result = string.Join('\n', classes.Inner.Select(Visit));
+
+            if (dumpMainCall)
+            {
+                result += "\n" +
+                          "new Driver()";
+            }
+
+            return result;
         }
 
         public override string Visit(Match match)
         {
             var returnVar = MakeVariable();
             var result = $"var {returnVar} = {Visit(match.Token)};\n" +
-                         $"{Visit(match.Arms)}";
+                         $"{GetReturnPrefix(match)}{Visit(match.Arms)}";
 
             _returnVariable.Pop();
 
@@ -335,7 +324,17 @@ namespace JavaScriptCodeGen
 
         public override string Visit(Arms arms)
         {
-            return string.Join(" ", arms.Inner.Select(Visit));
+            var result = "";
+            var closing = "";
+            foreach (var armToken in arms.Inner)
+            {
+                result += Visit(armToken) + ": ";
+                closing += ")";
+            }
+
+            result += @": new Error(""pattern matching failed."")" + closing;
+
+            return result;
         }
 
         private string MakeIndent(int indent)
@@ -352,7 +351,7 @@ namespace JavaScriptCodeGen
 
         private string GetReturnPrefix(IToken token)
         {
-            return _allReturnTokens.Contains(token.Id) ? $"{_returnVariable.Peek()} = " : string.Empty;
+            return _allReturnTokens.Any(x => x.Item1 == token.Id) ? $"return " : string.Empty;
         }
 
         private string TypeRename(string type)

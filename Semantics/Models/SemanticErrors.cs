@@ -1,25 +1,36 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Models;
 
 namespace Semantics.Models
 {
-    public class SemanticErrors
+    public class SemanticErrors<T>
     {
-        private readonly List<(IToken token, string error)> _errors = new();
+        private readonly T _result;
+        private readonly Dictionary<IToken, HashSet<string>> _errors = new();
 
-        public Dictionary<IToken, ReadOnlyCollection<string>> Collect()
+        public SemanticErrors(T result)
         {
-            return _errors.GroupBy(x => x.token, x => x.error)
-                .ToDictionary(x => x.Key, x => x.ToList().AsReadOnly());
+            _result = result;
+        }
+        
+        public Dictionary<IToken, IReadOnlySet<string>> Collect()
+        {
+            return _errors.ToDictionary(x => x.Key, x => (IReadOnlySet<string>)x.Value.ToImmutableHashSet());
         }
 
-        public Unit Error(IToken token, string error)
+        public T Error(IToken token, string error)
         {
-            _errors.Add((token, error));
+            if (!_errors.ContainsKey(token))
+            {
+                _errors[token] = new HashSet<string>();
+            }
 
-            return Unit.Instance;
+            _errors[token].Add(error);
+
+            return _result;
         }
     }
 }

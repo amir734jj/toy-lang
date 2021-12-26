@@ -250,4 +250,3 @@ class ArrayAny {
         return this.array_field[index] = obj;
     }
 }
-

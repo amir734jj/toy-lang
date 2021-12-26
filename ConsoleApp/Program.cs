@@ -32,17 +32,7 @@ namespace ConsoleApp
                 .WithAstDump(serviceProvider.GetService<ToyJavaScriptCodeGen>())
                 .Build();
 
-            // compiler(File.ReadAllText("fibonacci.toy"));
-            compiler(@"class Amir() extends IO() {
-                        {
-                            out(
-                              ""[""
-                                .concat(""]"")
-                                .concat(""expected: "")
-                                .concat("" but received: "")
-                            )
-                         }
-                    }");
+            compiler(File.ReadAllText("fibonacci.toy"));
         }
     }
 }

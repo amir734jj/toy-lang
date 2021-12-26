@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Equ;
 using Models.Interfaces;
 using Newtonsoft.Json;
@@ -18,6 +19,15 @@ namespace Models
         {
             Id = Guid.NewGuid();
             Type = GetType().Name;
+        }
+
+        public override string ToString()
+        {
+            var fields = GetType().GetProperties()
+                .Where(x => x.Name != "Type" && x.Name != "Id")
+                .Select(x => x.GetValue(this)?.ToString());
+            var result = string.Join(",", fields);
+            return $"{Type} ({result})";
         }
 
         public Guid Id { get; }

@@ -47,8 +47,6 @@ namespace Core
             {
                 var stream = new MemoryStream(BasicFileText.Concat(Encoding.Default.GetBytes(code)).ToArray());
                 var ast = _parser.Parse(stream);
-                
-                Console.WriteLine(JsonConvert.SerializeObject(_parser.Parse(new MemoryStream(Encoding.Default.GetBytes(code))), Formatting.Indented));
 
                 _semantics.Semant(ast);
                 _astDump.CodeGen(ast);

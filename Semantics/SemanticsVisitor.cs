@@ -25,7 +25,7 @@ namespace Semantics
         private readonly Stack<Dictionary<string, FunctionDeclToken>> _availableMethods = new();
 
         // ReSharper disable once MemberCanBePrivate.Global
-        public readonly SemanticErrors Semantics = new();
+        public readonly SemanticErrors<Unit> Semantics = new(Unit.Instance);
 
         public override Unit Visit(NativeToken nativeToken)
         {
@@ -867,12 +867,7 @@ namespace Semantics
 
             if (!_typeContour.Lookup(accessToken.Receiver, out var receiverType))
             {
-                Semantics.Error(accessToken, "Type of receiver is undefined.");
-            }
-
-            if (receiverType == null)
-            {
-                Console.WriteLine("amir");
+                return Semantics.Error(accessToken, "Type of receiver is undefined.");
             }
 
             // Exist RHS
@@ -1033,6 +1028,11 @@ namespace Semantics
                             "Type of actual should be superset of formal in class.");
                     }
                 }
+            }
+
+            if (classToken.Name == "Driver" && classToken.Formals.Inner.Any())
+            {
+                return Semantics.Error(classToken, "Driver class should not have any formals.");
             }
 
             _outerClassToken = classToken;

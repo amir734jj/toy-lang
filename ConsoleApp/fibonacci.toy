@@ -11,7 +11,7 @@ class Foo() extends IO() {
   def assertEquals(expected: Any, actual: Any, msg: String): Unit = if (expected != actual)
     out(
       "["
-        .concat(ms)
+        .concat(msg)
         .concat("]")
         .concat("expected: ")
         .concat(expected.toString())
@@ -22,4 +22,11 @@ class Foo() extends IO() {
     out("passed!");
 
   { assertEquals(34, fibonacci(9), "fibonacci") }
+}
+
+class Driver() extends IO() {
+    match new Foo() with {
+        case x:IO => ({}),
+        case null => out_any("it is null?")
+    }
 }

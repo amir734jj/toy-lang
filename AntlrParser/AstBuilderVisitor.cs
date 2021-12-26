@@ -114,6 +114,11 @@ namespace AntlrParser
 
         public override IToken VisitExpr(CoolParser.ExprContext context)
         {
+            if (context.NewToken() != null)
+            {
+                return new InstantiationToken(context.NameToken().First().GetText(), (Tokens)Visit(context.actuals()));
+            }
+            
             if (context.VarToken() != null)
             {
                 return new VarDeclToken(

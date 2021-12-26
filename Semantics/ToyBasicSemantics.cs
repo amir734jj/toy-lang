@@ -28,6 +28,7 @@ namespace Semantics
                 {
                     foreach (var message in messages)
                     {
+                        // ReSharper disable once AssignNullToNotNullAttribute
                         _logger.LogError("Concerning {Token}: {Message}", new string(token.ToString().Take(250).ToArray()), message);
                     }
                 }

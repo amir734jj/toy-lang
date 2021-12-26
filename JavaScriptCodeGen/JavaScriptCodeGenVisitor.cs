@@ -66,7 +66,7 @@ namespace JavaScriptCodeGen
         {
             var variableName = _scoped[_currentClassName].Contains(varDeclToken.Variable)
                 ? $"this.{varDeclToken.Variable}"
-                : $"var {varDeclToken.Variable}";
+                : $"{varDeclToken.Variable}";
             
             return $"{GetReturnPrefix(varDeclToken)}{variableName} = {Visit(varDeclToken.Body)};";
         }

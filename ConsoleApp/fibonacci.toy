@@ -26,7 +26,11 @@ class Foo() extends IO() {
 
 class Driver() extends IO() {
     match new Foo() with {
-        case x:IO => ({}),
+        case x:IO => {},
         case null => out_any("it is null?")
+    };
+    
+    override def toString(): String = {
+        "myName"
     }
 }

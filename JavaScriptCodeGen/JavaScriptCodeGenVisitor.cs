@@ -9,7 +9,7 @@ namespace JavaScriptCodeGen
 {
     internal class JavaScriptCodeGenVisitor : Visitor<string>
     {
-        private string _joinTokensWith = ";";
+        private readonly Stack<string> _joinTokensWith = new();
 
         private int _indent;
 
@@ -92,9 +92,12 @@ namespace JavaScriptCodeGen
         {
             if (blockToken.Tokens.Inner.Any())
             {
-                return $"{GetReturnPrefix(blockToken)}(() => {{ \n" +
+                _joinTokensWith.Push(";\n");
+                var result = $"{GetReturnPrefix(blockToken)}(() => {{ \n" +
                        $"\t{Visit(blockToken.Tokens)} \n" +
                        $"}}).bind(this)()";
+                _joinTokensWith.Pop();
+                return result;
             }
 
             return "new Unit()";
@@ -102,9 +105,9 @@ namespace JavaScriptCodeGen
 
         public override string Visit(FunctionCallToken functionCallToken)
         {
-            _joinTokensWith = ",";
-
+            _joinTokensWith.Push(",");
             var actualCode = functionCallToken.Actuals.Inner.Select(Visit).ToList();
+            _joinTokensWith.Pop();
 
             var functionName = functionCallToken.Name;
             if (!_beingAccessed && _scoped[_currentClassName].Contains(functionCallToken.Name))
@@ -219,13 +222,16 @@ namespace JavaScriptCodeGen
             var extendsPrefix = classToken.Inherits != NOTHING_TYPE ? $"extends {TypeRename(classToken.Inherits)}" : "";
 
             _indent = 0;
-            _joinTokensWith = $"\n{MakeIndent(1)}";
-
+            _joinTokensWith.Push(",");
             var actuals = Visit(classToken.Actuals);
+            _joinTokensWith.Pop();
+            
+            _joinTokensWith.Push(";\n");
             var insideConstructor = string.Join(";\n", new[]{$"super({actuals})"}.Concat(classToken.Features.Inner.Where(x => x is not FunctionDeclToken).Select(Visit)));
-
+            _joinTokensWith.Pop();
+            
             var methods = string.Join('\n', classToken.Features.Inner.Where(x => x is FunctionDeclToken).Select(Visit));
-
+            
             var result =
                 $"class {classToken.Name} {extendsPrefix} {{\n" +
                 $"{MakeIndent(1)}constructor{Visit(classToken.Formals)} {{\n" +
@@ -241,14 +247,14 @@ namespace JavaScriptCodeGen
 
         public override string Visit(TypedArmToken typedArmToken)
         {
-            return $"((({_returnVariable.Peek()} instanceof {TypeRename(typedArmToken.Type)}) && " +
-                   $"(var {typedArmToken.Name} = {_returnVariable.Peek()})) ? " +
+            return $"({_returnVariable.Peek()} instanceof {TypeRename(typedArmToken.Type)} && " +
+                   $"({typedArmToken.Name} = {_returnVariable.Peek()})) ? " +
                    $"{Visit(typedArmToken.Result)}";
         }
 
         public override string Visit(NullArmToken nullArmToken)
         {
-            return $"(({_returnVariable.Peek()} === null) ? {Visit(nullArmToken.Result)}";
+            return $"({_returnVariable.Peek()} === null) ? {Visit(nullArmToken.Result)}";
         }
 
         public override string Visit(Formals formals)
@@ -258,7 +264,7 @@ namespace JavaScriptCodeGen
 
         public override string Visit(Tokens tokens)
         {
-            return string.Join(_joinTokensWith, tokens.Inner.Select(Visit));
+            return string.Join(_joinTokensWith.Peek(), tokens.Inner.Select(Visit));
         }
 
         public override string Visit(Classes classes)
@@ -306,12 +312,13 @@ namespace JavaScriptCodeGen
         public override string Visit(Match match)
         {
             var returnVar = MakeVariable();
-            var result = $"var {returnVar} = {Visit(match.Token)};\n" +
-                         $"{GetReturnPrefix(match)}{Visit(match.Arms)}";
+            
+            var variables = match.Arms.Inner.Where(x => x is TypedArmToken).Cast<TypedArmToken>().Select(x => x.Name);
+            var decls = "var " + string.Join(',', variables);
 
-            _returnVariable.Pop();
-
-            return result;
+            return $"{GetReturnPrefix(match)}" +
+                   $"(({returnVar}) => {{ {decls};\n" +
+                   $"return {Visit(match.Arms)} }}).bind(this)({Visit(match.Token)})";
         }
 
         public override string Visit(Arms arms)
@@ -320,11 +327,11 @@ namespace JavaScriptCodeGen
             var closing = "";
             foreach (var armToken in arms.Inner)
             {
-                result += Visit(armToken) + ": ";
+                result += "(" + Visit(armToken) + ": ";
                 closing += ")";
             }
 
-            result += @": new Error(""pattern matching failed."")" + closing;
+            result += @"new Error(""pattern matching failed."")" + closing;
 
             return result;
         }

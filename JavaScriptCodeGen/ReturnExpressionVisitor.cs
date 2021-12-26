@@ -151,12 +151,12 @@ namespace JavaScriptCodeGen
 
         public override IEnumerable<(Guid, IToken)> Visit(TypedArmToken typedArmToken)
         {
-            return Visit(typedArmToken.Result);
+            return Visit(typedArmToken).Where(x => x.Item1 != typedArmToken.Result.Id).ToList();
         }
 
         public override IEnumerable<(Guid, IToken)> Visit(NullArmToken nullArmToken)
         {
-            return Visit(nullArmToken.Result);
+            return Visit(nullArmToken).Where(x => x.Item1 != nullArmToken.Result.Id).ToList();
         }
 
         public override IEnumerable<(Guid, IToken)> Visit(Formals formals)
@@ -180,7 +180,7 @@ namespace JavaScriptCodeGen
 
         public override IEnumerable<(Guid, IToken)> Visit(Match match)
         {
-            return Visit(match.Arms);
+            return new[] { (match.Id, (IToken)match) };
         }
 
         public override IEnumerable<(Guid, IToken)> Visit(Arms arms)

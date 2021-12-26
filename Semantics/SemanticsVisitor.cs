@@ -1261,6 +1261,16 @@ namespace Semantics
 
         public override Unit Visit(Arms arms)
         {
+            if (arms.Inner
+                .Where(x => x is TypedArmToken)
+                .Cast<TypedArmToken>()
+                .Select(x => x.Name)
+                .GroupBy(x => x)
+                .Any(x => x.Count() > 1))
+            {
+                return Semantics.Error(arms, "Variable names in match arm should be unique.");
+            }
+            
             foreach (var armToken in arms.Inner)
             {
                 Visit(armToken);

@@ -1,5 +1,5 @@
 # toy-lang
-Toy programming language
+Toy programming language: my attempt at creating a new toy/experimental language in just 3 weeks.
 
 TODO:
 - ~Antlr4~

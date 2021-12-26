@@ -26,11 +26,11 @@ namespace Semantics
 
         // ReSharper disable once MemberCanBePrivate.Global
         public readonly SemanticErrors<Unit> Semantics = new(Unit.Instance);
-
+        
         public override Unit Visit(NativeToken nativeToken)
         {
             // Native has a root type
-            _typeContour.Update(nativeToken, ANY_TYPE);
+            _typeContour.Update(nativeToken, NOTHING_TYPE);
 
             return Unit.Instance;
         }
@@ -225,7 +225,17 @@ namespace Semantics
 
             if (functionDeclToken.Type != NOTHING_TYPE && !_hierarchy.ContainsKey(functionDeclToken.Type))
             {
+                return Semantics.Error(functionDeclToken, "Static return type of function should be defined.");
+            }
+
+            if (!_typeContour.Lookup(functionDeclToken.Body, out var functionRetType))
+            {
                 return Semantics.Error(functionDeclToken, "Return type of function should be defined.");
+            }
+
+            if (TypeLub(functionDeclToken.Type, functionRetType) != functionDeclToken.Type)
+            {
+                return Semantics.Error(functionDeclToken, "Dynamic return type of function should be superset equal of static return type.");
             }
 
             // Exist function contour
@@ -1081,7 +1091,7 @@ namespace Semantics
             // Make sure dynamic type of arm exist
             if (!_typeContour.Lookup(typedArmToken.Result, out var typeOfArm))
             {
-                return Semantics.Error(typedArmToken, "Type of branch arm did not exist.");
+                return Semantics.Error(typedArmToken, "Type of typed branch arm did not exist.");
             }
 
             _variableContour = _variableContour.Pop();
@@ -1095,8 +1105,21 @@ namespace Semantics
 
         public override Unit Visit(NullArmToken nullArmToken)
         {
+            _variableContour = _variableContour.Push();
+            _typeContour = _typeContour.Push();
+            
+            Visit(nullArmToken.Result);
+
+            if (!_typeContour.Lookup(nullArmToken.Result, out var bodyRetType))
+            {
+                return Semantics.Error(nullArmToken, "Type of null branch body is not defined.");
+            }
+            
+            _variableContour = _variableContour.Pop();
+            _typeContour = _typeContour.Pop();
+            
             // Type of null arm of branch is ROOT_TYPE
-            _typeContour.Update(nullArmToken, ANY_TYPE);
+            _typeContour.Update(nullArmToken, bodyRetType);
 
             return Unit.Instance;
         }
@@ -1292,6 +1315,10 @@ namespace Semantics
             {
                 return t2;
             }
+
+            if (t1 == NOTHING_TYPE) return t2;
+
+            if (t2 == NOTHING_TYPE) return t1;
 
             if (t1 == ANY_TYPE || t2 == ANY_TYPE)
             {

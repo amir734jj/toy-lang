@@ -27,7 +27,6 @@ namespace JavaScriptCodeGen
         private readonly Dictionary<string, List<string>> _scoped = new();
 
         private string _currentClassName = "";
-        private readonly ReturnExpressionVisitor _returnFinder = new();
 
         public override string Visit(AndToken andToken)
         {
@@ -270,33 +269,51 @@ namespace JavaScriptCodeGen
         public override string Visit(Classes classes)
         {
             bool dumpMainCall = false;
+            
             // Collect methods
-            foreach (var classToken in classes.Inner)
+            var fixedPointReached = false;
+            while (!fixedPointReached)
             {
-                dumpMainCall |= classToken.Name == "Driver";
-                var parentMethods = new List<string>();
-                if (classToken.Inherits != NOTHING_TYPE)
+                fixedPointReached = true;
+                foreach (var classToken in classes.Inner)
                 {
-                    parentMethods = _scoped[classToken.Inherits];
-                }
+                    dumpMainCall |= classToken.Name == "Driver";
+                    var parentMethods = new List<string>();
+                    
+                    if (classToken.Inherits != NOTHING_TYPE)
+                    {
+                        if (!_scoped.ContainsKey(classToken.Inherits))
+                        {
+                            fixedPointReached = false;
+                            parentMethods = new List<string>();
+                        }
+                        else
+                        {
+                            parentMethods = _scoped[classToken.Inherits];
+                        }
+                    }
+             
+                    var classDeclMethods = parentMethods.Select(x => x).ToList();
+                    foreach (var functionDeclToken in classToken.Features.Inner
+                                 .Where(x => x is FunctionDeclToken)
+                                 .Cast<FunctionDeclToken>())
+                    {
+                        classDeclMethods.Add(functionDeclToken.Name);
+                    }
 
-                var classDeclMethods = parentMethods.Select(x => x).ToList();
-                foreach (var functionDeclToken in classToken.Features.Inner
-                    .Where(x => x is FunctionDeclToken)
-                    .Cast<FunctionDeclToken>())
-                {
-                    classDeclMethods.Add(functionDeclToken.Name);
-                }
-                
-                foreach (var formal in classToken.Formals.Inner)
-                {
-                    classDeclMethods.Add(formal.Name);
-                }
+                    foreach (var formal in classToken.Formals.Inner)
+                    {
+                        classDeclMethods.Add(formal.Name);
+                    }
 
-                _scoped[classToken.Name] = classDeclMethods;
+                    _scoped[classToken.Name] = classDeclMethods;
+                }
             }
             
-            _allReturnTokens = _returnFinder.Visit(classes).ToHashSet();
+            var returnExpressionVisitor = new ReturnExpressionVisitor();
+            var returnFinder = returnExpressionVisitor.Visit(classes);
+            
+            _allReturnTokens = returnFinder.ToHashSet();
             
             var result = string.Join('\n', classes.Inner.Select(Visit));
 

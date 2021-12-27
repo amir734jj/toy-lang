@@ -7,7 +7,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-COPY ../ .
+COPY . .
 
 RUN dotnet restore
 RUN dotnet publish -c Release -o out

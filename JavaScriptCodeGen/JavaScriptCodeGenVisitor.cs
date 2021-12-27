@@ -190,7 +190,7 @@ namespace JavaScriptCodeGen
                 string str => @$"""{str}""",
                 int number => number.ToString(),
                 bool boolean => boolean.ToString().ToLower(),
-                null => null,
+                null => "null",
                 UNIT_SYMBOL_VALUE => "new Unit()",
                 _ => throw new ArgumentOutOfRangeException()
             };

@@ -1282,12 +1282,36 @@ namespace Semantics
             
             // Type of match is lub of all arms
             var armsType = armTypes.Aggregate(TypeLub);
+
+            string prevType = null;
             
             foreach (var armToken in match.Arms.Inner)
             {
-                if (armToken is TypedArmToken typedArmToken && TypeLub(typedArmToken.Type, expressionType) != typedArmToken.Type)
+                if (armToken is TypedArmToken typedArmToken)
                 {
-                    return Semantics.Error(armToken, "Typed arm branch should narrow down the expression not broaden it.");
+                    var resultOfLub = TypeLub(typedArmToken.Type, expressionType);
+
+                    if (expressionType != ANY_TYPE && resultOfLub != expressionType)
+                    {
+                        if (resultOfLub == ANY_TYPE)
+                        {
+                            return Semantics.Error(armToken, "Typed arm doesn't make sense.");
+                        }
+                        
+                        return Semantics.Error(armToken, "Typed arm branch should narrow down the expression not broaden it.");
+                    }
+                    
+                    if (prevType != null)
+                    {
+                        var lubWithPrev = TypeLub(typedArmToken.Type, prevType);
+
+                        if (lubWithPrev != typedArmToken.Type && lubWithPrev != ANY_TYPE)
+                        {
+                            return Semantics.Error(armToken, "Typed arm branch already covered in previous arm.");
+                        }
+                    }
+
+                    prevType = typedArmToken.Type;
                 }
             }
 
@@ -1335,15 +1359,18 @@ namespace Semantics
                 return t2;
             }
 
+            // _ LUB Nothing => _
             if (t1 == NOTHING_TYPE) return t2;
-
             if (t2 == NOTHING_TYPE) return t1;
 
-            if (t1 == ANY_TYPE || t2 == ANY_TYPE)
-            {
-                return ANY_TYPE;
-            }
+            // _ LUB String => String
+            if (t1 == STRING_TYPE && t2 == ANY_TYPE) return STRING_TYPE;
+            if (t1 == ANY_TYPE && t2 == STRING_TYPE) return STRING_TYPE;
 
+            // _ LUB Any => _
+            if (t1 == ANY_TYPE) return t2;
+            if (t2 == ANY_TYPE) return t1;
+            
             var p1 = TypePathToRoot(t1);
             var p2 = TypePathToRoot(t2);
 

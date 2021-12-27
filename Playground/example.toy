@@ -1,6 +1,6 @@
 /**
  * Extending IO gives us printing capabilities
- * Driver class is the entrypoint
+ * Driver class is the entry point
  */
 class Driver() extends IO() {
     def fact(n: Int): Int = if (n <= 1) n else n * fact(n-1);

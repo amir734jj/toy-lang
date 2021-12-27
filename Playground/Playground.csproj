@@ -9,4 +9,10 @@
       <ProjectReference Include="..\Semantics\Semantics.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="fibonacci.toy">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

@@ -76,7 +76,7 @@ namespace JavaScriptCodeGen
                 prefix = "var ";
             }
 
-            return $"{GetReturnPrefix(varDeclToken)}{prefix}{variableName} = {Visit(varDeclToken.Body)}; {variableName}";
+            return $"{prefix}{variableName} = {Visit(varDeclToken.Body)}; {GetReturnPrefix(varDeclToken)}{variableName}";
         }
 
         public override string Visit(FunctionDeclToken functionDeclToken)
@@ -198,7 +198,7 @@ namespace JavaScriptCodeGen
 
         public override string Visit(VariableToken variableToken)
         {
-            return _scoped.ContainsKey(variableToken.Variable)
+            return _scoped[_currentClassName].Contains(variableToken.Variable)
                 ? $"this.{variableToken.Variable}"
                 : $"{variableToken.Variable}";
         }
@@ -240,7 +240,9 @@ namespace JavaScriptCodeGen
             _joinTokensWith.Pop();
             
             _joinTokensWith.Push(";\n");
-            var insideConstructor = string.Join(";\n", new[]{$"super({actuals})"}.Concat(classToken.Features.Inner.Where(x => x is not FunctionDeclToken).Select(Visit)));
+            var insideConstructor = string.Join(";\n", new[]{$"super({actuals})"}
+                .Concat(classToken.Formals.Inner.Select(x => $"this.{x.Name} = {x.Name}"))
+                .Concat(classToken.Features.Inner.Where(x => x is not FunctionDeclToken).Select(Visit)));
             _joinTokensWith.Pop();
             
             var methods = string.Join('\n', classToken.Features.Inner.Where(x => x is FunctionDeclToken).Select(Visit));

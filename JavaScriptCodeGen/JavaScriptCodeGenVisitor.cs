@@ -63,11 +63,20 @@ namespace JavaScriptCodeGen
 
         public override string Visit(VarDeclToken varDeclToken)
         {
-            var variableName = _scoped[_currentClassName].Contains(varDeclToken.Variable)
-                ? $"this.{varDeclToken.Variable}"
-                : $"{varDeclToken.Variable}";
-            
-            return $"{GetReturnPrefix(varDeclToken)}{variableName} = {Visit(varDeclToken.Body)};";
+            string variableName;
+            string prefix;
+            if (_scoped[_currentClassName].Contains(varDeclToken.Variable))
+            {
+                variableName = $"this.{varDeclToken.Variable}";
+                prefix = "";
+            }
+            else
+            {
+                variableName = $"{varDeclToken.Variable}";
+                prefix = "var ";
+            }
+
+            return $"{GetReturnPrefix(varDeclToken)}{prefix}{variableName} = {Visit(varDeclToken.Body)}; {variableName}";
         }
 
         public override string Visit(FunctionDeclToken functionDeclToken)

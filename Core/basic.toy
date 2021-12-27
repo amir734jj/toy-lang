@@ -30,6 +30,11 @@ class IO() {
    */
   def abort(message : String) : Nothing = native;
 
+  /**
+   * Alert a message
+   */
+  def alert(arg: String): IO = native;
+
   /** Print the argument (without quotes) to stdout and return itself */
   def out(arg : String) : IO = native;
 
@@ -122,6 +127,11 @@ class String() {
    * as an integer.
    */
   def charAt(index : Int) : Int = native;
+  
+  /**
+   * Returns the integer representation of string
+   */
+  def toInt(): Int = native;
 
   /**
    * Return the first index of given substring in this string,

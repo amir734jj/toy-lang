@@ -24,9 +24,17 @@ class IO {
         new Error(message.str_field);
     }
 
+    /**
+     * Alert a message
+     */
+    alert(arg) {
+        window.alert(arg.toString());
+        return this;
+    }
+
     /** Print the argument (without quotes) to stdout and return itself */
     out(arg) {
-        console.log(arg);
+        console.log(arg.toString());
         return this;
     }
 
@@ -43,7 +51,10 @@ class IO {
      * Return null on end of file.
      */
     in() {
-        return prompt();
+        let result = prompt();
+        let str = new StringC();
+        str.str_field = result;
+        return str;
     }
 
     /** Get the symbol for this string, creating a new one if needed. */
@@ -156,6 +167,15 @@ class StringC {
      */
     charAt(index) {
         return this.str_field.charAt(index);
+    }
+
+    /**
+     * Returns the integer representation of string
+     */
+    toInt() {
+        let result = new IntC();
+        result.value = parseInt(this.str_field);
+        return result;
     }
 
     /**

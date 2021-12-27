@@ -21,5 +21,7 @@ class Driver() extends IO() {
   else
     out("passed!");
 
-  { assertEquals(34, fibonacci(9), "fibonacci") }
+  { assertEquals(34, fibonacci(9), "fibonacci");
+    var num: Int = in().toInt();
+    alert(fibonacci(num).toString()) }
 }

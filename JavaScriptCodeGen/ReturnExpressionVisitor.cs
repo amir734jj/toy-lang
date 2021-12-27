@@ -57,7 +57,7 @@ namespace JavaScriptCodeGen
                 rest = new[] { (last.Id, last) };
             }
 
-            return new[] { (blockToken.Id, (IToken)blockToken) }.Concat(rest).Concat(Visit(blockToken.Tokens)).ToList();
+            return new[] { (blockToken.Id, (IToken)blockToken) }.Concat(rest).Concat(Visit(blockToken.Tokens).Where(x => blockToken.Tokens.Inner.All(y => x.Item1 != y.Id))).ToList();
         }
 
         public override IEnumerable<(Guid, IToken)> Visit(FunctionCallToken functionCallToken)

@@ -15,10 +15,5 @@ RUN dotnet publish -c Release -o out
 
 WORKDIR /app/out
 
-ENV ASPNETCORE_ENVIRONMENT=Development
-ENV DOTNET_USE_POLLING_FILE_WATCHER=true  
-ENV ASPNETCORE_URLS=http://+:80  
-
-EXPOSE 80
-
+ENV ASPNETCORE_URLS http://*:$PORT
 ENTRYPOINT ["dotnet", "Playground.dll"]

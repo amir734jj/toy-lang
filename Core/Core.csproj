@@ -8,6 +8,7 @@
       <ProjectReference Include="..\AntlrParser\AntlrParser.csproj" />
       <ProjectReference Include="..\AstJsonDump\AstJsonDump.csproj" />
       <ProjectReference Include="..\FParsecParser\FParsecParser.csproj" />
+      <ProjectReference Include="..\JavaScriptCodeGen\JavaScriptCodeGen.csproj" />
       <ProjectReference Include="..\Models\Models.csproj" />
     </ItemGroup>
 

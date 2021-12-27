@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Models;
 using Models.Interfaces;
@@ -10,18 +11,22 @@ namespace JavaScriptCodeGen
     {
         private readonly ILogger<ToyJavaScriptCodeGen> _logger;
 
+        private static readonly string BasicFileText = File.ReadAllText(Path.Join(Directory.GetParent(Assembly.GetAssembly(typeof(ToyJavaScriptCodeGen)).Location).FullName, "basic.js"));
+
         public ToyJavaScriptCodeGen(ILogger<ToyJavaScriptCodeGen> logger)
         {
             _logger = logger;
         }
         
-        public void CodeGen(Classes classes)
+        public void CodeGen(CompilerPayload compilerPayload)
         {
             var visitor = new JavaScriptCodeGenVisitor();
 
-            var result = File.ReadAllText("basic.js") + visitor.Visit(classes);
-            
+            var result = BasicFileText + visitor.Visit(compilerPayload.Ast);
+
             _logger.LogInformation(result);
+
+            compilerPayload.Result = result;
         }
     }
 }

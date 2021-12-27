@@ -5,7 +5,7 @@ Toy programming language: my attempt at creating a new toy/experimental language
 /**
  * This is an example of multiline comment
  */
-class Foo() extends IO() {
+class Driver() extends IO() {
   // This is an example of single line comment
   def fibonacci(n: Int): Int = if (n <= 1)
     n

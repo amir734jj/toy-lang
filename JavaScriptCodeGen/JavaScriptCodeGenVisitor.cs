@@ -161,12 +161,12 @@ namespace JavaScriptCodeGen
 
         public override string Visit(DivideToken divideToken)
         {
-            return $"{GetReturnPrefix(divideToken)}{Visit(divideToken.Left)} + {Visit(divideToken.Right)}";
+            return $"{GetReturnPrefix(divideToken)}{Visit(divideToken.Left)} / {Visit(divideToken.Right)}";
         }
 
         public override string Visit(MultiplyToken multiplyToken)
         {
-            return $"{GetReturnPrefix(multiplyToken)}{Visit(multiplyToken.Left)} / {Visit(multiplyToken.Right)}";
+            return $"{GetReturnPrefix(multiplyToken)}{Visit(multiplyToken.Left)} * {Visit(multiplyToken.Right)}";
         }
 
         public override string Visit(AtomicToken atomicToken)
@@ -232,7 +232,7 @@ namespace JavaScriptCodeGen
             var methods = string.Join('\n', classToken.Features.Inner.Where(x => x is FunctionDeclToken).Select(Visit));
             
             var result =
-                $"class {classToken.Name} {extendsPrefix} {{\n" +
+                $"class {TypeRename(classToken.Name)} {extendsPrefix} {{\n" +
                 $"{MakeIndent(1)}constructor{Visit(classToken.Formals)} {{\n" +
                 $"{insideConstructor}\n" +
                 $"{MakeIndent(1)}}}\n" +
@@ -370,9 +370,15 @@ namespace JavaScriptCodeGen
             return _allReturnTokens.Any(x => x.Item1 == token.Id) ? $"return " : string.Empty;
         }
 
-        private string TypeRename(string type)
+        private static string TypeRename(string type)
         {
-            return type == "String" ? "StringC" : type;
+            return type switch
+            {
+                "String" => "StringC",
+                "Boolean" => "BooleanC",
+                "Int" => "IntC",
+                _ => type
+            };
         }
     }
 }

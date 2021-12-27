@@ -2,6 +2,7 @@ using System.IO;
 using AntlrParser;
 using FParsecParser;
 using Microsoft.Extensions.Logging.Abstractions;
+using Models;
 using Xunit;
 
 namespace Core.Tests
@@ -11,14 +12,18 @@ namespace Core.Tests
         [Fact]
         public void Test_Basic()
         {
-            // Arrange, Act
-            var ast1 = new ToyAntlrParser(NullLogger<ToyAntlrParser>.Instance)
-                .Parse(new MemoryStream(ToyCompiler.BasicFileText));
-            var ast2 = new ToyFparsecParser(NullLogger<ToyFparsecParser>.Instance)
-                .Parse(new MemoryStream(ToyCompiler.BasicFileText));
+            // Arrange
+            var p1 = new CompilerPayload { Stream = new MemoryStream(ToyCompiler.BasicFileText) };
+            var p2 = new CompilerPayload { Stream = new MemoryStream(ToyCompiler.BasicFileText) };
+            
+            // Act
+            new ToyAntlrParser(NullLogger<ToyAntlrParser>.Instance)
+                .Parse(p1);
+            new ToyFparsecParser(NullLogger<ToyFparsecParser>.Instance)
+                .Parse(p2);
             
             // Assert
-            Assert.Equal(ast1, ast2);
+            Assert.Equal(p1, p2);
         }
     }
 }

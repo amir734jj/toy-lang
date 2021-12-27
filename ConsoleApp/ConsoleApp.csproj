@@ -7,7 +7,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Core\Core.csproj" />
-      <ProjectReference Include="..\JavaScriptCodeGen\JavaScriptCodeGen.csproj" />
       <ProjectReference Include="..\Semantics\Semantics.csproj" />
     </ItemGroup>
 

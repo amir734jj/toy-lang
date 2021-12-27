@@ -2,6 +2,6 @@ namespace Models.Interfaces
 {
     public interface IAstDump
     {
-        void CodeGen(Classes classes);
+        void CodeGen(CompilerPayload compilerPayload);
     }
 }

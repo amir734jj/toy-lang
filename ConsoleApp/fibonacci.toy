@@ -1,36 +1,5 @@
-/**
- * This is an example of multiline comment
- */
-class Foo() extends IO() {
-  // This is an example of single line comment
-  def fibonacci(n: Int): Int = if (n <= 1)
-    n
-  else
-    fibonacci(n - 1) + fibonacci(n - 2);
-
-  def assertEquals(expected: Any, actual: Any, msg: String): IO = if (expected != actual)
-    out(
-      "["
-        .concat(msg)
-        .concat("]")
-        .concat("expected: ")
-        .concat(expected.toString())
-        .concat(" but received: ")
-        .concat(actual.toString())
-    )
-  else
-    out("passed!");
-
-  { assertEquals(34, fibonacci(9), "fibonacci") }
-}
-
 class Driver() extends IO() {
-    match new Foo() with {
-        case x:IO => {},
-        case null => out_any("it is null?")
-    };
+    def fact(n: Int): Int = n * fact(n-1);
     
-    override def toString(): String = {
-        "myName"
-    }
+    { out("fact of 100 is: ".concat(fact(100).toString())) }
 }

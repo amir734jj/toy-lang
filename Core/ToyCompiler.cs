@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Core.Interfaces;
 using Microsoft.Extensions.Logging;
+using Models;
 using Models.Interfaces;
 using Newtonsoft.Json;
 
@@ -15,7 +17,7 @@ namespace Core
         private IToyParser _parser;
         private IToySemantics _semantics;
         private IAstDump _astDump;
-        public static readonly byte[] BasicFileText = File.ReadAllBytes("basic.toy");
+        public static readonly byte[] BasicFileText = File.ReadAllBytes(Path.Join(Directory.GetParent(Assembly.GetAssembly(typeof(ToyCompiler)).Location).FullName, "basic.toy"));
 
         public ToyCompiler(ILogger<ToyCompiler> logger)
         {
@@ -41,15 +43,15 @@ namespace Core
             return this;
         }
 
-        public Action<string> Build()
+        public Action<CompilerPayload> Build()
         {
             return code =>
             {
-                var stream = new MemoryStream(BasicFileText.Concat(Encoding.Default.GetBytes(code)).ToArray());
-                var ast = _parser.Parse(stream);
+                code.Stream = new MemoryStream(BasicFileText.Concat(Encoding.Default.GetBytes(code.Code ?? "")).ToArray());
 
-                _semantics.Semant(ast);
-                _astDump.CodeGen(ast);
+                _parser.Parse(code);
+                _semantics.Semant(code);
+                _astDump.CodeGen(code);
             };
         }
     }

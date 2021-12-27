@@ -4,6 +4,6 @@ namespace Models.Interfaces
 {
     public interface IToyParser
     {
-        Classes Parse(Stream text);
+        void Parse(CompilerPayload compilerPayload);
     }
 }

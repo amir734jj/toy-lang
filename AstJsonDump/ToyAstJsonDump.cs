@@ -14,9 +14,10 @@ namespace AstJsonDump
             _logger = logger;
         }
         
-        public void CodeGen(Classes classes)
+        public void CodeGen(CompilerPayload compilerPayload)
         {
-            _logger.LogTrace("{}", JsonConvert.SerializeObject(classes, Formatting.Indented));
+            var result = JsonConvert.SerializeObject(compilerPayload.Ast, Formatting.Indented);
+            _logger.LogTrace("{}", result);
         }
     }
 }

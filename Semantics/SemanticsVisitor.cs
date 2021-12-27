@@ -22,8 +22,10 @@ namespace Semantics
 
         private readonly Dictionary<string, Dictionary<string, FunctionDeclToken>> _methods = new();
 
-        private readonly Stack<Dictionary<string, FunctionDeclToken>> _availableMethods = new();
+        private Dictionary<string, FunctionDeclToken> _availableMethods = new();
 
+        private FunctionDeclToken _accessedFunctionDecl = null;
+        
         // ReSharper disable once MemberCanBePrivate.Global
         public readonly SemanticErrors<Unit> Semantics = new(Unit.Instance);
         
@@ -289,10 +291,19 @@ namespace Semantics
                 return Semantics.Error(functionCallToken, "Cannot have method outside of class.");
             }
 
-            // Make sure function decl is actually defined
-            if (!_availableMethods.Peek().TryGetValue(functionCallToken.Name, out var functionDeclToken))
+            FunctionDeclToken functionDeclToken;
+            if (_accessedFunctionDecl?.Name == functionCallToken.Name)
             {
-                return Semantics.Error(functionCallToken, "Function is not defined and cannot be invoked.");
+                functionDeclToken = _accessedFunctionDecl;
+                _accessedFunctionDecl = null;
+            }
+            else
+            {
+                // Make sure function decl is actually defined
+                if (!_availableMethods.TryGetValue(functionCallToken.Name, out functionDeclToken))
+                {
+                    return Semantics.Error(functionCallToken, "Function is not defined and cannot be invoked.");
+                }
             }
 
             // Make sure count of formals and actuals are equal
@@ -888,7 +899,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
             
-            _availableMethods.Push(_methods[receiverType]);
+            _accessedFunctionDecl = _methods[receiverType].GetValueOrDefault(accessToken.FunctionCall.Name);
 
             Visit(accessToken.FunctionCall);
 
@@ -897,7 +908,7 @@ namespace Semantics
                 return Semantics.Error(accessToken, "Type of variable is not defined.");
             }
 
-            _availableMethods.Pop();
+            _accessedFunctionDecl = null;
 
             // Exist LHS
             _variableContour = _variableContour.Pop();
@@ -1046,7 +1057,7 @@ namespace Semantics
             }
 
             _outerClassToken = classToken;
-            _availableMethods.Push(_methods[classToken.Name]);
+            _availableMethods = _methods[classToken.Name];
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
@@ -1056,7 +1067,7 @@ namespace Semantics
             _variableContour = _variableContour.Pop();
             _typeContour = _typeContour.Pop();
             _outerClassToken = null;
-            _availableMethods.Clear();
+            _availableMethods = new();
 
             return Unit.Instance;
         }

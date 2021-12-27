@@ -19,13 +19,14 @@ namespace FParsecParser
             _logger = logger;
         }
         
-        public Classes Parse(Stream stream)
+        public void Parse(CompilerPayload compilerPayload)
         {
-            var result = Parser.Classes().Parse(new CharStream<Unit>(stream, Encoding.Default));
+            var result = Parser.Classes().Parse(new CharStream<Unit>(compilerPayload.Stream, Encoding.Default));
 
             if (result.IsOk())
             {
-                return result.Result;
+                compilerPayload.Ast = result.Result;
+                return;
             }
 
             _logger.LogError("Parser failed: {%s}", result.Error);

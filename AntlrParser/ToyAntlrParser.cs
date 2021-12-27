@@ -18,9 +18,9 @@ namespace AntlrParser
             _logger = logger;
         }
         
-        public Classes Parse(Stream stream)
+        public void Parse(CompilerPayload compilerPayload)
         {
-            var str = CharStreams.fromStream(stream);
+            var str = CharStreams.fromStream(compilerPayload.Stream);
 
             var lexer = new CoolLexer(str);
             var tokens = new CommonTokenStream(lexer);
@@ -44,8 +44,8 @@ namespace AntlrParser
 
             var tree = parser.classes();
             var visitor = new AstBuilderVisitor();
-            
-            return (Classes)visitor.Visit(tree);
+
+            compilerPayload.Ast = (Classes)visitor.Visit(tree);
         }
     }
 }

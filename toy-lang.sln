@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FParsecTests", "FParsecTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstJsonDump", "AstJsonDump\AstJsonDump.csproj", "{F7BEAF82-D10E-45CD-912F-CBE7D9DEFB1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlaygroundWebsite", "PlaygroundWebsite\PlaygroundWebsite.csproj", "{2B858B30-1A7B-4E63-9276-7A4748026EFD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,5 +68,9 @@ Global
 		{F7BEAF82-D10E-45CD-912F-CBE7D9DEFB1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F7BEAF82-D10E-45CD-912F-CBE7D9DEFB1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F7BEAF82-D10E-45CD-912F-CBE7D9DEFB1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B858B30-1A7B-4E63-9276-7A4748026EFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B858B30-1A7B-4E63-9276-7A4748026EFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B858B30-1A7B-4E63-9276-7A4748026EFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B858B30-1A7B-4E63-9276-7A4748026EFD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

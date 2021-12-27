@@ -69,7 +69,7 @@ class Unit {
 /** The class of integers in the range -2^31 .. (2^31)-1
  * null is not a legal value for integers, and Int can have no subclasses.
  */
-class Int {
+class IntC {
     
     constructor() {
         this.value = 0;
@@ -90,7 +90,7 @@ class Int {
  * null is not a legal boolean.
  * It is illegal to inherit from Boolean.
  */
-class Boolean {
+class BooleanC {
     constructor() {
         this.value = false;
     }

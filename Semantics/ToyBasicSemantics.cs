@@ -15,10 +15,10 @@ namespace Semantics
             _logger = logger;
         }
         
-        public void Semant(Classes classes)
+        public void Semant(CompilerPayload compilerPayload)
         {
             var visitor = new SemanticsVisitor();
-            visitor.Visit(classes);
+            visitor.Visit(compilerPayload.Ast);
 
             var errors = visitor.Semantics.Collect();
             

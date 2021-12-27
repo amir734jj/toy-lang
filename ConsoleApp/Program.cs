@@ -1,11 +1,11 @@
 ﻿using System.IO;
 using System.Reflection;
-using AntlrParser;
-using AstJsonDump;
 using Core;
+using FParsecParser;
 using JavaScriptCodeGen;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Models;
 using Semantics;
 
 namespace ConsoleApp
@@ -27,12 +27,12 @@ namespace ConsoleApp
                 .BuildServiceProvider();
 
             var compiler = serviceProvider.GetRequiredService<ToyCompiler>()
-                .WithParser(serviceProvider.GetService<ToyAntlrParser>())
+                .WithParser(serviceProvider.GetService<ToyFparsecParser>())
                 .WithSemantics(serviceProvider.GetService<ToyBasicSemantics>())
                 .WithAstDump(serviceProvider.GetService<ToyJavaScriptCodeGen>())
                 .Build();
 
-            compiler(File.ReadAllText("fibonacci.toy"));
+            compiler(new CompilerPayload { Code = File.ReadAllText("fibonacci.toy") });
         }
     }
 }

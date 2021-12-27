@@ -15,5 +15,4 @@ RUN dotnet publish -c Release -o out
 
 WORKDIR /app/out
 
-ENV ASPNETCORE_URLS http://*:$PORT
 ENTRYPOINT ["dotnet", "Playground.dll"]

@@ -1,5 +1,5 @@
 # toy-lang
-Toy programming language: my attempt at creating a new toy/experimental language in just 3 weeks.
+Toy programming language: my attempt at creating a new toy/experimental language in just 2 weeks.
 
 ```scala
 /**

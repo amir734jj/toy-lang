@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="fibonacci.toy">
+        <None Update="example.toy">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>

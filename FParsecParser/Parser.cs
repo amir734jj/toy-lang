@@ -52,7 +52,7 @@ namespace FParsecParser
             FSharpFunc<CharStream<Unit>, Reply<IToken>> Atomic(
                 FSharpFunc<CharStream<Unit>, Reply<IToken>> expressionRec)
             {
-                var quotedStringP = Wrap('"', Regex(@"(?:[^\\""]|\\.)*"), '"')
+                var quotedStringP = Between('"', Regex(@"(?:[^\\""]|\\.)*"), '"')
                     .Label("string")
                     .Map(x => (IToken)new AtomicToken(x));
                 var numberP = Int

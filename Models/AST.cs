@@ -18,7 +18,7 @@ namespace Models
         public Token()
         {
             Id = Guid.NewGuid();
-            Type = GetType().Name;
+            AstNode = GetType().Name;
         }
 
         public override string ToString()
@@ -27,12 +27,12 @@ namespace Models
                 .Where(x => x.Name != "Type" && x.Name != "Id")
                 .Select(x => x.GetValue(this)?.ToString());
             var result = string.Join(",", fields);
-            return $"{Type} ({result})";
+            return $"{AstNode} ({result})";
         }
 
         public Guid Id { get; }
         
-        public string Type { get; }
+        public string AstNode { get; }
     }
 
     #region Misc

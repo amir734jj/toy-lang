@@ -14,4 +14,6 @@ RUN dotnet publish -c Release -o out
 
 EXPOSE 80
 
+WORKDIR /app/out
+
 ENTRYPOINT ["dotnet", "Playground.dll"]

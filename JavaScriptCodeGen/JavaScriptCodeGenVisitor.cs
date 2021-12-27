@@ -30,12 +30,12 @@ namespace JavaScriptCodeGen
 
         public override string Visit(AndToken andToken)
         {
-            return $"{GetReturnPrefix(andToken)}{andToken.Left} = {Visit(andToken.Right)}";
+            return $"{GetReturnPrefix(andToken)}({andToken.Left} && {Visit(andToken.Right)})";
         }
 
         public override string Visit(OrToken orToken)
         {
-            return $"{GetReturnPrefix(orToken)}{orToken.Left} = {Visit(orToken.Right)}";
+            return $"{GetReturnPrefix(orToken)}({orToken.Left} || {Visit(orToken.Right)})";
         }
 
         public override string Visit(NativeToken nativeToken)
@@ -45,7 +45,7 @@ namespace JavaScriptCodeGen
 
         public override string Visit(AssignToken assignToken)
         {
-            return $"{GetReturnPrefix(assignToken)}{assignToken.Variable} = {Visit(assignToken.Body)}";
+            return $"{GetReturnPrefix(assignToken)}({assignToken.Variable} = {Visit(assignToken.Body)})";
         }
 
         public override string Visit(WhileToken whileToken)
@@ -135,52 +135,52 @@ namespace JavaScriptCodeGen
 
         public override string Visit(NegateToken negateToken)
         {
-            return $"{GetReturnPrefix(negateToken)}-{Visit(negateToken.Token)}";
+            return $"{GetReturnPrefix(negateToken)}(-{Visit(negateToken.Token)})";
         }
 
         public override string Visit(NotToken notToken)
         {
-            return $"{GetReturnPrefix(notToken)}-{Visit(notToken.Token)}";
+            return $"{GetReturnPrefix(notToken)}(!{Visit(notToken.Token)})";
         }
 
         public override string Visit(AddToken addToken)
         {
-            return $"{GetReturnPrefix(addToken)}{Visit(addToken.Left)} + {Visit(addToken.Right)}";
+            return $"{GetReturnPrefix(addToken)}({Visit(addToken.Left)} + {Visit(addToken.Right)})";
         }
 
         public override string Visit(EqualsToken equalsToken)
         {
-            return $"{GetReturnPrefix(equalsToken)}{Visit(equalsToken.Left)} === {Visit(equalsToken.Right)}";
+            return $"{GetReturnPrefix(equalsToken)}({Visit(equalsToken.Left)} === {Visit(equalsToken.Right)})";
         }
 
         public override string Visit(NotEqualsToken notEqualsToken)
         {
-            return $"{GetReturnPrefix(notEqualsToken)}{Visit(notEqualsToken.Left)} !== {Visit(notEqualsToken.Right)}";
+            return $"{GetReturnPrefix(notEqualsToken)}({Visit(notEqualsToken.Left)} !== {Visit(notEqualsToken.Right)})";
         }
 
         public override string Visit(LessThanToken lessThanToken)
         {
-            return $"{GetReturnPrefix(lessThanToken)}{Visit(lessThanToken.Left)} < {Visit(lessThanToken.Right)}";
+            return $"{GetReturnPrefix(lessThanToken)}({Visit(lessThanToken.Left)} < {Visit(lessThanToken.Right)})";
         }
 
         public override string Visit(LessThanEqualsToken lessThanEqualsToken)
         {
-            return $"{GetReturnPrefix(lessThanEqualsToken)}{Visit(lessThanEqualsToken.Left)} <= {Visit(lessThanEqualsToken.Right)}";
+            return $"{GetReturnPrefix(lessThanEqualsToken)}({Visit(lessThanEqualsToken.Left)} <= {Visit(lessThanEqualsToken.Right)})";
         }
 
         public override string Visit(SubtractToken subtractToken)
         {
-            return $"{GetReturnPrefix(subtractToken)}{Visit(subtractToken.Left)} - {Visit(subtractToken.Right)}";
+            return $"{GetReturnPrefix(subtractToken)}({Visit(subtractToken.Left)} - {Visit(subtractToken.Right)})";
         }
 
         public override string Visit(DivideToken divideToken)
         {
-            return $"{GetReturnPrefix(divideToken)}{Visit(divideToken.Left)} / {Visit(divideToken.Right)}";
+            return $"{GetReturnPrefix(divideToken)}({Visit(divideToken.Left)} / {Visit(divideToken.Right)})";
         }
 
         public override string Visit(MultiplyToken multiplyToken)
         {
-            return $"{GetReturnPrefix(multiplyToken)}{Visit(multiplyToken.Left)} * {Visit(multiplyToken.Right)}";
+            return $"{GetReturnPrefix(multiplyToken)}({Visit(multiplyToken.Left)} * {Visit(multiplyToken.Right)})";
         }
 
         public override string Visit(AtomicToken atomicToken)

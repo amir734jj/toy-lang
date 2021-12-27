@@ -21,6 +21,11 @@ namespace Playground
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     var port = Environment.GetEnvironmentVariable("PORT");
+                    if (string.IsNullOrEmpty(port))
+                    {
+                        port = "5000";
+                    }
+                    
                     webBuilder.UseStartup<Startup>()
                         .UseUrls("http://*:" + port);
                 });

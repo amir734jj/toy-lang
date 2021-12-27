@@ -104,16 +104,21 @@ namespace JavaScriptCodeGen
 
         public override string Visit(FunctionCallToken functionCallToken)
         {
-            _joinTokensWith.Push(",");
-            var actualCode = functionCallToken.Actuals.Inner.Select(Visit).ToList();
-            _joinTokensWith.Pop();
-
             var functionName = functionCallToken.Name;
             if (!_beingAccessed && _scoped[_currentClassName].Contains(functionCallToken.Name))
             {
                 functionName = "this." + functionName;
             }
+            
+            if (_beingAccessed)
+            {
+                _beingAccessed = false;
+            }
 
+            _joinTokensWith.Push(",");
+            var actualCode = functionCallToken.Actuals.Inner.Select(Visit).ToList();
+            _joinTokensWith.Pop();
+            
             var result = $"{GetReturnPrefix(functionCallToken)}{functionName}({string.Join(',', actualCode)})";
 
             return result;

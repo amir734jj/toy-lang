@@ -32,7 +32,7 @@ namespace ConsoleApp
                 .WithAstDump(serviceProvider.GetService<ToyJavaScriptCodeGen>())
                 .Build();
 
-            compiler(new CompilerPayload { Code = File.ReadAllText("fibonacci.toy") });
+            compiler(new CompilerPayload { Code = File.ReadAllText("fact.toy") });
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Semantics
                 {
                     foreach (var message in messages)
                     {
-                        var text = $"Concerning {new string(token.ToString().Take(250).ToArray())}: {message}";
+                        var text = $"Concerning `{new string(token.ToString().Take(250).ToArray())}`: {message}";
                         
                         compilerPayload.Errors.Add(text);
                         

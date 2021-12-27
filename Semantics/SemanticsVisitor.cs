@@ -1168,6 +1168,14 @@ namespace Semantics
                 _hierarchy.Add(classToken.Name, classToken.Inherits);
             }
             
+            foreach (var classToken in classes.Inner)
+            {
+                if (classToken.Inherits != NOTHING_TYPE && !_hierarchy.ContainsKey(classToken.Inherits))
+                {
+                    return Semantics.Error(classToken, "Extending a class that is not defined.");
+                }
+            }
+            
             // Collect methods
             var fixedPointReached = false;
             while (!fixedPointReached)

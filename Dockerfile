@@ -12,4 +12,6 @@ COPY . .
 RUN dotnet restore
 RUN dotnet publish -c Release -o out
 
+EXPOSE 80
+
 ENTRYPOINT ["dotnet", "Playground.dll"]

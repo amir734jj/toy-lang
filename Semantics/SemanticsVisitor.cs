@@ -330,7 +330,7 @@ namespace Semantics
                 }
 
                 // Make sure type of actual is superset of formal
-                if (TypeLub(actualType, formal.Type) != formal.Type)
+                if (formal.Type != ANY_TYPE && TypeLub(actualType, formal.Type) != formal.Type)
                 {
                     return Semantics.Error(functionCallToken, "Type of actual should be superset of formal in function call.");
                 }

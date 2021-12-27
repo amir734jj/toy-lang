@@ -29,10 +29,10 @@
             }
         </div>
         <div class="col-sm-6">
-            <button @onclick="Compile">Compile</button>
+            <button @onclick="Compile" type="button" class="btn btn-success">Compile</button>
             @if (!string.IsNullOrWhiteSpace(_javascript))
             {
-                <button @onclick="Run">Run</button>
+                <button @onclick="Run" type="button" class="btn btn-primary" style="margin-left: 1rem">Run</button>
             }
         </div>
     </div>

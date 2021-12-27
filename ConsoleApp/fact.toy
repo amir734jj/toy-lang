@@ -1,5 +1,9 @@
 class Driver() extends IO() {
-    def fact(n: Int): Int = n * fact(n-1);
+    def fact(n: Int): Int = if (n <= 1) n else n * fact(n-1);
     
-    { out("fact of 100 is: ".concat(fact(100).toString())) }
+    { var result: Int = in().toInt();
+      alert("fact of "
+        .concat(result.toString())
+        .concat(" is: ")
+        .concat(fact(result).toString())) }
 }

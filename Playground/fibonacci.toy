@@ -1,5 +1,5 @@
 /**
- * This is an example of multiline comment
+ * This is an example of a multiline comment
  */
 class Driver() extends IO() {
   // This is an example of single line comment

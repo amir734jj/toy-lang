@@ -174,7 +174,9 @@ class StringC {
      */
     toInt() {
         let result = new IntC();
-        result.value = parseInt(this.str_field);
+        let intResult = parseInt(this.str_field, 10);
+        if (intResult < 0) intResult = -intResult;
+        result.value = intResult;
         return result;
     }
 

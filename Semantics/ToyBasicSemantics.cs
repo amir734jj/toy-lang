@@ -28,8 +28,12 @@ namespace Semantics
                 {
                     foreach (var message in messages)
                     {
+                        var text = $"Concerning {new string(token.ToString().Take(250).ToArray())}: {message}";
+                        
+                        compilerPayload.Errors.Add(text);
+                        
                         // ReSharper disable once AssignNullToNotNullAttribute
-                        _logger.LogError("Concerning {Token}: {Message}", new string(token.ToString().Take(250).ToArray()), message);
+                        _logger.LogError(text);
                     }
                 }
 

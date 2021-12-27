@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
 using System.Text;
 using FParsec;
@@ -27,6 +28,11 @@ namespace FParsecParser
             {
                 compilerPayload.Ast = result.Result;
                 return;
+            }
+            
+            foreach (var errorMessage in result.Error.AsEnumerable())
+            {
+                compilerPayload.Errors.Add(errorMessage.ToString());
             }
 
             _logger.LogError("Parser failed: {%s}", result.Error);

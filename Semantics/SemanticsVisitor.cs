@@ -1160,12 +1160,12 @@ namespace Semantics
             // Collect class hierarchy
             foreach (var classToken in classes.Inner)
             {
-                _hierarchy.Add(classToken.Name, classToken.Inherits);
-
-                if (_variableContour.Lookup(classToken.Name, out _))
+                if (_hierarchy.ContainsKey(classToken.Name))
                 {
                     return Semantics.Error(classToken, "Duplicate class name is not allowed.");
                 }
+                
+                _hierarchy.Add(classToken.Name, classToken.Inherits);
             }
             
             // Collect methods

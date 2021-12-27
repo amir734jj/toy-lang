@@ -23,7 +23,7 @@ namespace Core.Tests
                 .Parse(p2);
             
             // Assert
-            Assert.Equal(p1, p2);
+            Assert.Equal(p1.Ast, p2.Ast);
         }
     }
 }

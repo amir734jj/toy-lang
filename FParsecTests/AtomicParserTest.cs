@@ -99,7 +99,7 @@ namespace ParserTests
 
             // Assert
             Assert.True(reply.IsOk());
-            Assert.Equal(new AtomicToken("Hello world! \\r\\n\\\" "), reply.Result);
+            Assert.Equal(new AtomicToken(@" Hello world! \r\n\"" "), reply.Result);
         }
     }
 }

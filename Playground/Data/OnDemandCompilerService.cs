@@ -5,7 +5,7 @@ using JavaScriptCodeGen;
 using Models;
 using Semantics;
 
-namespace PlaygroundWebsite.Data
+namespace Playground.Data
 {
     public class OnDemandCompilerService
     {

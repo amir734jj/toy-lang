@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "PlaygroundWebsite": {
+    "Playground": {
       "commandName": "Project",
       "dotnetRunMessages": "true",
       "launchBrowser": false,

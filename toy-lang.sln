@@ -20,7 +20,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FParsecTests", "FParsecTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstJsonDump", "AstJsonDump\AstJsonDump.csproj", "{F7BEAF82-D10E-45CD-912F-CBE7D9DEFB1D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlaygroundWebsite", "PlaygroundWebsite\PlaygroundWebsite.csproj", "{2B858B30-1A7B-4E63-9276-7A4748026EFD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "Playground\Playground.csproj", "{2B858B30-1A7B-4E63-9276-7A4748026EFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

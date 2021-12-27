@@ -1,6 +1,8 @@
 # toy-lang
 Toy programming language: my attempt at creating a new toy/experimental language in just 2 weeks.
 
+Please check out the Wiki page
+
 ```scala
 /**
  * This is an example of multiline comment

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models;
@@ -7,7 +6,7 @@ using static Models.Constants;
 
 namespace Semantics
 {
-    internal class SemanticsVisitor : Visitor<Unit>
+    internal class SemanticsVisitor : IVisitor<Unit>
     {
         private Contour<string, IToken> _variableContour = new();
 
@@ -29,7 +28,7 @@ namespace Semantics
         // ReSharper disable once MemberCanBePrivate.Global
         public readonly SemanticErrors<Unit> Semantics = new(Unit.Instance);
         
-        public override Unit Visit(NativeToken nativeToken)
+        public Unit Visit(NativeToken nativeToken)
         {
             // Native has a root type
             _typeContour.Update(nativeToken, NOTHING_TYPE);
@@ -37,13 +36,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(AssignToken assignToken)
+        public Unit Visit(AssignToken assignToken)
         {
             // Enter expression body contours
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(assignToken.Body);
+            AsVisitor().Visit(assignToken.Body);
 
             // Make sure variable being assigned actually exist
             if (!_variableContour.Lookup(assignToken.Variable, out var variableToken))
@@ -80,13 +79,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(WhileToken whileToken)
+        public Unit Visit(WhileToken whileToken)
         {
             // Enter loop condition contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(whileToken.Condition);
+            AsVisitor().Visit(whileToken.Condition);
 
             // Make sure type of condition exist
             if (!_typeContour.Lookup(whileToken.Condition, out var condType))
@@ -108,7 +107,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(whileToken.Body);
+            AsVisitor().Visit(whileToken.Body);
 
             // Exit loop body contour
             _variableContour = _variableContour.Pop();
@@ -120,13 +119,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(CondToken condToken)
+        public Unit Visit(CondToken condToken)
         {
             // Enter if condition contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(condToken.Condition);
+            AsVisitor().Visit(condToken.Condition);
 
             // Make sure type of condition expression is defined
             if (!_typeContour.Lookup(condToken.Condition, out var condType))
@@ -148,7 +147,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(condToken.IfToken);
+            AsVisitor().Visit(condToken.IfToken);
 
             // Make sure of if expression is defined
             if (!_typeContour.Lookup(condToken.IfToken, out var ifType))
@@ -164,7 +163,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(condToken.ElseToken);
+            AsVisitor().Visit(condToken.ElseToken);
 
             // Make sure type of else expression is defined
             if (!_typeContour.Lookup(condToken.ElseToken, out var elseType))
@@ -182,13 +181,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(VarDeclToken varDeclToken)
+        public Unit Visit(VarDeclToken varDeclToken)
         {
             // Enter var decl expression contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(varDeclToken.Body);
+            AsVisitor().Visit(varDeclToken.Body);
 
             // Make sure type of type of variable declaration body expression is defined
             if (!_typeContour.Lookup(varDeclToken.Body, out var exprType))
@@ -216,14 +215,14 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(FunctionDeclToken functionDeclToken)
+        public Unit Visit(FunctionDeclToken functionDeclToken)
         {
             // Enter function contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
             Visit(functionDeclToken.Formals);
-            Visit(functionDeclToken.Body);
+            AsVisitor().Visit(functionDeclToken.Body);
 
             if (functionDeclToken.Type != NOTHING_TYPE && !_hierarchy.ContainsKey(functionDeclToken.Type))
             {
@@ -247,7 +246,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(BlockToken blockToken)
+        public Unit Visit(BlockToken blockToken)
         {
             // Enter block contour
             _variableContour = _variableContour.Push();
@@ -284,7 +283,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(FunctionCallToken functionCallToken)
+        public Unit Visit(FunctionCallToken functionCallToken)
         {
             if (_outerClassToken == null)
             {
@@ -321,7 +320,7 @@ namespace Semantics
                 _variableContour = _variableContour.Push();
                 _typeContour = _typeContour.Push();
 
-                Visit(actual);
+                AsVisitor().Visit(actual);
                 
                 // Make sure type of actual exist
                 if (!_typeContour.Lookup(actual, out var actualType))
@@ -346,13 +345,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(NegateToken negateToken)
+        public Unit Visit(NegateToken negateToken)
         {
             // Enter negate expression contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(negateToken.Token);
+            AsVisitor().Visit(negateToken.Token);
 
             if (!_typeContour.Lookup(negateToken.Token, out var exprType))
             {
@@ -374,12 +373,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(NotToken notToken)
+        public Unit Visit(NotToken notToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(notToken.Token);
+            AsVisitor().Visit(notToken.Token);
 
             if (!_typeContour.Lookup(notToken.Token, out var exprType))
             {
@@ -400,12 +399,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(AddToken addToken)
+        public Unit Visit(AddToken addToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(addToken.Left);
+            AsVisitor().Visit(addToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(addToken.Left, out var lhsType))
@@ -425,7 +424,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(addToken.Right);
+            AsVisitor().Visit(addToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(addToken.Right, out var rhsType))
@@ -448,13 +447,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(EqualsToken equalsToken)
+        public Unit Visit(EqualsToken equalsToken)
         {
             // Enter LHS contours
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(equalsToken.Left);
+            AsVisitor().Visit(equalsToken.Left);
 
             // Exist LHS contours
             _variableContour = _variableContour.Pop();
@@ -464,7 +463,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(equalsToken.Right);
+            AsVisitor().Visit(equalsToken.Right);
 
             // Exist RHS contours
             _variableContour = _variableContour.Pop();
@@ -475,13 +474,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(NotEqualsToken notEqualsToken)
+        public Unit Visit(NotEqualsToken notEqualsToken)
         {
             // Enter LHS contours
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(notEqualsToken.Left);
+            AsVisitor().Visit(notEqualsToken.Left);
 
             // Exist LHS contours
             _variableContour = _variableContour.Pop();
@@ -491,7 +490,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(notEqualsToken.Right);
+            AsVisitor().Visit(notEqualsToken.Right);
 
             // Exist RHS contours
             _variableContour = _variableContour.Pop();
@@ -502,12 +501,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(LessThanToken lessThanToken)
+        public Unit Visit(LessThanToken lessThanToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(lessThanToken.Left);
+            AsVisitor().Visit(lessThanToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(lessThanToken.Left, out var lhsType))
@@ -527,7 +526,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(lessThanToken.Right);
+            AsVisitor().Visit(lessThanToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(lessThanToken.Right, out var rhsType))
@@ -550,12 +549,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(LessThanEqualsToken lessThanEqualsToken)
+        public Unit Visit(LessThanEqualsToken lessThanEqualsToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(lessThanEqualsToken.Left);
+            AsVisitor().Visit(lessThanEqualsToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(lessThanEqualsToken.Left, out var lhsType))
@@ -575,7 +574,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(lessThanEqualsToken.Right);
+            AsVisitor().Visit(lessThanEqualsToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(lessThanEqualsToken.Right, out var rhsType))
@@ -597,13 +596,18 @@ namespace Semantics
 
             return Unit.Instance;
         }
-        
-        public override Unit Visit(AndToken andToken)
+
+        public IVisitor<Unit> AsVisitor()
+        {
+            return this;
+        }
+
+        public Unit Visit(AndToken andToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(andToken.Left);
+            AsVisitor().Visit(andToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(andToken.Left, out var lhsType))
@@ -623,7 +627,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(andToken.Right);
+            AsVisitor().Visit(andToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(andToken.Right, out var rhsType))
@@ -646,12 +650,12 @@ namespace Semantics
             return Unit.Instance;
         }
         
-        public override Unit Visit(OrToken orToken)
+        public Unit Visit(OrToken orToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(orToken.Left);
+            AsVisitor().Visit(orToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(orToken.Left, out var lhsType))
@@ -671,7 +675,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(orToken.Right);
+            AsVisitor().Visit(orToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(orToken.Right, out var rhsType))
@@ -694,12 +698,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(SubtractToken subtractToken)
+        public Unit Visit(SubtractToken subtractToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(subtractToken.Left);
+            AsVisitor().Visit(subtractToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(subtractToken.Left, out var lhsType))
@@ -719,7 +723,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(subtractToken.Right);
+            AsVisitor().Visit(subtractToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(subtractToken.Right, out var rhsType))
@@ -742,12 +746,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(DivideToken divideToken)
+        public Unit Visit(DivideToken divideToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(divideToken.Left);
+            AsVisitor().Visit(divideToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(divideToken.Left, out var lhsType))
@@ -767,7 +771,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(divideToken.Right);
+            AsVisitor().Visit(divideToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(divideToken.Right, out var rhsType))
@@ -790,12 +794,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(MultiplyToken multiplyToken)
+        public Unit Visit(MultiplyToken multiplyToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(multiplyToken.Left);
+            AsVisitor().Visit(multiplyToken.Left);
 
             // Make sure type of LHS is defined
             if (!_typeContour.Lookup(multiplyToken.Left, out var lhsType))
@@ -815,7 +819,7 @@ namespace Semantics
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(multiplyToken.Right);
+            AsVisitor().Visit(multiplyToken.Right);
 
             // Make sure type of RHS is defined
             if (!_typeContour.Lookup(multiplyToken.Right, out var rhsType))
@@ -838,7 +842,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(AtomicToken atomicToken)
+        public Unit Visit(AtomicToken atomicToken)
         {
             _typeContour.Update(atomicToken, atomicToken.Value switch
             {
@@ -853,7 +857,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(VariableToken variableToken)
+        public Unit Visit(VariableToken variableToken)
         {
             if (_outerClassToken != null && variableToken.Variable == THIS_VAR)
             {
@@ -878,13 +882,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(AccessToken accessToken)
+        public Unit Visit(AccessToken accessToken)
         {
             // Enter LHS
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(accessToken.Receiver);
+            AsVisitor().Visit(accessToken.Receiver);
 
             if (!_typeContour.Lookup(accessToken.Receiver, out var receiverType))
             {
@@ -920,7 +924,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(InstantiationToken instantiationToken)
+        public Unit Visit(InstantiationToken instantiationToken)
         {
             if (!_variableContour.Lookup(instantiationToken.Class, out var classDeclUntyped))
             {
@@ -970,7 +974,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(Formal formal)
+        public Unit Visit(Formal formal)
         {
             // Make sure shadowing of variable name is disallowed
             if (_variableContour.Lookup(formal.Name, out _))
@@ -996,7 +1000,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(ClassToken classToken)
+        public Unit Visit(ClassToken classToken)
         {
             // Make sure class does not extend itself
             if (classToken.Name == classToken.Inherits)
@@ -1072,7 +1076,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(TypedArmToken typedArmToken)
+        public Unit Visit(TypedArmToken typedArmToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
@@ -1085,7 +1089,7 @@ namespace Semantics
             
             _variableContour.Update(typedArmToken.Name, typedArmToken);
 
-            Visit(typedArmToken.Result);
+            AsVisitor().Visit(typedArmToken.Result);
             
             // Make sure type used in typed arm branch actually exist
             if (!_variableContour.Lookup(typedArmToken.Type, out var classToken))
@@ -1114,12 +1118,12 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(NullArmToken nullArmToken)
+        public Unit Visit(NullArmToken nullArmToken)
         {
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
             
-            Visit(nullArmToken.Result);
+            AsVisitor().Visit(nullArmToken.Result);
 
             if (!_typeContour.Lookup(nullArmToken.Result, out var bodyRetType))
             {
@@ -1135,7 +1139,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(Formals formals)
+        public Unit Visit(Formals formals)
         {
             foreach (var token in formals.Inner)
             {
@@ -1145,17 +1149,17 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(Tokens tokens)
+        public Unit Visit(Tokens tokens)
         {
             foreach (var token in tokens.Inner)
             {
-                Visit(token);
+                AsVisitor().Visit(token);
             }
 
             return Unit.Instance;
         }
 
-        public override Unit Visit(Classes classes)
+        public Unit Visit(Classes classes)
         {
             // Collect class hierarchy
             foreach (var classToken in classes.Inner)
@@ -1246,13 +1250,13 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(Match match)
+        public Unit Visit(Match match)
         {
             // Enter expression contour
             _variableContour = _variableContour.Push();
             _typeContour = _typeContour.Push();
 
-            Visit(match.Token);
+            AsVisitor().Visit(match.Token);
 
             if (!_typeContour.Lookup(match.Token, out var expressionType))
             {
@@ -1325,7 +1329,7 @@ namespace Semantics
             return Unit.Instance;
         }
 
-        public override Unit Visit(Arms arms)
+        public Unit Visit(Arms arms)
         {
             if (arms.Inner
                 .Where(x => x is TypedArmToken)
@@ -1339,7 +1343,7 @@ namespace Semantics
             
             foreach (var armToken in arms.Inner)
             {
-                Visit(armToken);
+                AsVisitor().Visit(armToken);
             }
             
             return Unit.Instance;

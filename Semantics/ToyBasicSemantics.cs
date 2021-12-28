@@ -18,7 +18,7 @@ namespace Semantics
         public void Semant(CompilerPayload compilerPayload)
         {
             var visitor = new SemanticsVisitor();
-            visitor.Visit(compilerPayload.Ast);
+            visitor.AsVisitor().Visit(compilerPayload.Ast);
 
             var errors = visitor.Semantics.Collect();
             

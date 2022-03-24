@@ -2,9 +2,11 @@ using Models.Interfaces;
 
 namespace Models
 {
-    public abstract class Visitor<T> : IVisitor<T>
+    public interface IVisitor<out T>
     {
-        public virtual T Visit(IToken token)
+        public IVisitor<T> AsVisitor();
+        
+        public T Visit(IToken token)
         {
             return token switch
             {
@@ -45,38 +47,38 @@ namespace Models
             };
         }
         
-        public abstract T Visit(AndToken andToken);
-        public abstract T Visit(OrToken orToken);
-        public abstract T Visit(NativeToken nativeToken);
-        public abstract T Visit(AssignToken assignToken);
-        public abstract T Visit(WhileToken whileToken);
-        public abstract T Visit(CondToken condToken);
-        public abstract T Visit(VarDeclToken varDeclToken);
-        public abstract T Visit(FunctionDeclToken functionDeclToken);
-        public abstract T Visit(BlockToken blockToken);
-        public abstract T Visit(FunctionCallToken functionCallToken);
-        public abstract T Visit(NegateToken negateToken);
-        public abstract T Visit(NotToken notToken);
-        public abstract T Visit(AddToken addToken);
-        public abstract T Visit(EqualsToken equalsToken);
-        public abstract T Visit(NotEqualsToken notEqualsToken);
-        public abstract T Visit(LessThanToken lessThanToken);
-        public abstract T Visit(LessThanEqualsToken lessThanEqualsToken);
-        public abstract T Visit(SubtractToken subtractToken);
-        public abstract T Visit(DivideToken divideToken);
-        public abstract T Visit(MultiplyToken multiplyToken);
-        public abstract T Visit(AtomicToken atomicToken);
-        public abstract T Visit(VariableToken variableToken);
-        public abstract T Visit(AccessToken accessToken);
-        public abstract T Visit(InstantiationToken instantiationToken);
-        public abstract T Visit(Formal formal);
-        public abstract T Visit(ClassToken classToken);
-        public abstract T Visit(TypedArmToken typedArmToken);
-        public abstract T Visit(NullArmToken nullArmToken);
-        public abstract T Visit(Formals formals);
-        public abstract T Visit(Tokens tokens);
-        public abstract T Visit(Classes classes);
-        public abstract T Visit(Match match);
-        public abstract T Visit(Arms arms);
+        public T Visit(AndToken andToken);
+        public T Visit(OrToken orToken);
+        public T Visit(NativeToken nativeToken);
+        public T Visit(AssignToken assignToken);
+        public T Visit(WhileToken whileToken);
+        public T Visit(CondToken condToken);
+        public T Visit(VarDeclToken varDeclToken);
+        public T Visit(FunctionDeclToken functionDeclToken);
+        public T Visit(BlockToken blockToken);
+        public T Visit(FunctionCallToken functionCallToken);
+        public T Visit(NegateToken negateToken);
+        public T Visit(NotToken notToken);
+        public T Visit(AddToken addToken);
+        public T Visit(EqualsToken equalsToken);
+        public T Visit(NotEqualsToken notEqualsToken);
+        public T Visit(LessThanToken lessThanToken);
+        public T Visit(LessThanEqualsToken lessThanEqualsToken);
+        public T Visit(SubtractToken subtractToken);
+        public T Visit(DivideToken divideToken);
+        public T Visit(MultiplyToken multiplyToken);
+        public T Visit(AtomicToken atomicToken);
+        public T Visit(VariableToken variableToken);
+        public T Visit(AccessToken accessToken);
+        public T Visit(InstantiationToken instantiationToken);
+        public T Visit(Formal formal);
+        public T Visit(ClassToken classToken);
+        public T Visit(TypedArmToken typedArmToken);
+        public T Visit(NullArmToken nullArmToken);
+        public T Visit(Formals formals);
+        public T Visit(Tokens tokens);
+        public T Visit(Classes classes);
+        public T Visit(Match match);
+        public T Visit(Arms arms);
     }
 }

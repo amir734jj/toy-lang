@@ -22,7 +22,7 @@ namespace JavaScriptCodeGen
         {
             var visitor = new JavaScriptCodeGenVisitor();
 
-            var result = BasicFileText + visitor.Visit(compilerPayload.Ast);
+            var result = BasicFileText + visitor.AsVisitor().Visit(compilerPayload.Ast);
 
             _logger.LogInformation(result);
 

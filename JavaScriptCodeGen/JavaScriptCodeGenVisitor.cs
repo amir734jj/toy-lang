@@ -7,7 +7,7 @@ using static Models.Constants;
 
 namespace JavaScriptCodeGen
 {
-    internal class JavaScriptCodeGenVisitor : Visitor<string>
+    internal class JavaScriptCodeGenVisitor : IVisitor<string>
     {
         private readonly Stack<string> _joinTokensWith = new();
 
@@ -28,40 +28,45 @@ namespace JavaScriptCodeGen
 
         private string _currentClassName = "";
 
-        public override string Visit(AndToken andToken)
+        public IVisitor<string> AsVisitor()
         {
-            return $"{GetReturnPrefix(andToken)}({andToken.Left} && {Visit(andToken.Right)})";
+            return this;
         }
 
-        public override string Visit(OrToken orToken)
+        public string Visit(AndToken andToken)
         {
-            return $"{GetReturnPrefix(orToken)}({orToken.Left} || {Visit(orToken.Right)})";
+            return $"{GetReturnPrefix(andToken)}{andToken.Left} = {AsVisitor().Visit(andToken.Right)}";
         }
 
-        public override string Visit(NativeToken nativeToken)
+        public string Visit(OrToken orToken)
+        {
+            return $"{GetReturnPrefix(orToken)}{orToken.Left} = {AsVisitor().Visit(orToken.Right)}";
+        }
+
+        public string Visit(NativeToken nativeToken)
         {
             return $"{GetReturnPrefix(nativeToken)}new Error()";
         }
 
-        public override string Visit(AssignToken assignToken)
+        public string Visit(AssignToken assignToken)
         {
-            return $"{GetReturnPrefix(assignToken)}({assignToken.Variable} = {Visit(assignToken.Body)})";
+            return $"{GetReturnPrefix(assignToken)}{assignToken.Variable} = {AsVisitor().Visit(assignToken.Body)}";
         }
 
-        public override string Visit(WhileToken whileToken)
+        public string Visit(WhileToken whileToken)
         {
-            return $"while ({Visit(whileToken.Condition)}) {{\n" +
-                   $"\t {Visit(whileToken.Body)} \n" +
+            return $"while ({AsVisitor().Visit(whileToken.Condition)}) {{\n" +
+                   $"\t {AsVisitor().Visit(whileToken.Body)} \n" +
                    $"}}";
         }
 
-        public override string Visit(CondToken condToken)
+        public string Visit(CondToken condToken)
         {
-            var result = $"{GetReturnPrefix(condToken)}(({Visit(condToken.Condition)}) ? ({Visit(condToken.IfToken)}) : ({Visit(condToken.ElseToken)}))";
+            var result = $"{GetReturnPrefix(condToken)}(({AsVisitor().Visit(condToken.Condition)}) ? ({AsVisitor().Visit(condToken.IfToken)}) : ({AsVisitor().Visit(condToken.ElseToken)}))";
             return result;
         }
 
-        public override string Visit(VarDeclToken varDeclToken)
+        public string Visit(VarDeclToken varDeclToken)
         {
             string variableName;
             string prefix;
@@ -76,12 +81,12 @@ namespace JavaScriptCodeGen
                 prefix = "var ";
             }
 
-            return $"{prefix}{variableName} = {Visit(varDeclToken.Body)}; {GetReturnPrefix(varDeclToken)}{variableName}";
+            return $"{GetReturnPrefix(varDeclToken)}{prefix}{variableName} = {AsVisitor().Visit(varDeclToken.Body)}; {variableName}";
         }
 
-        public override string Visit(FunctionDeclToken functionDeclToken)
+        public string Visit(FunctionDeclToken functionDeclToken)
         {
-            var body = Visit(functionDeclToken.Body);
+            var body = AsVisitor().Visit(functionDeclToken.Body);
             
             // Native stuff should be dumped manually
             if (functionDeclToken.Body is NativeToken)
@@ -89,20 +94,20 @@ namespace JavaScriptCodeGen
                 throw new NotImplementedException();
             }
             
-            var result = $"{functionDeclToken.Name}{Visit(functionDeclToken.Formals)} {{ \n" +
+            var result = $"{functionDeclToken.Name}{AsVisitor().Visit(functionDeclToken.Formals)} {{ \n" +
                          $"\t {body} \n" +
                          $"}}";
 
             return result;
         }
 
-        public override string Visit(BlockToken blockToken)
+        public string Visit(BlockToken blockToken)
         {
             if (blockToken.Tokens.Inner.Any())
             {
                 _joinTokensWith.Push(";\n");
                 var result = $"{GetReturnPrefix(blockToken)}(() => {{ \n" +
-                       $"\t{Visit(blockToken.Tokens)} \n" +
+                       $"\t{AsVisitor().Visit(blockToken.Tokens)} \n" +
                        $"}}).bind(this)()";
                 _joinTokensWith.Pop();
                 return result;
@@ -111,7 +116,7 @@ namespace JavaScriptCodeGen
             return "new Unit()";
         }
 
-        public override string Visit(FunctionCallToken functionCallToken)
+        public string Visit(FunctionCallToken functionCallToken)
         {
             var functionName = functionCallToken.Name;
             if (!_beingAccessed && _scoped[_currentClassName].Contains(functionCallToken.Name))
@@ -125,7 +130,7 @@ namespace JavaScriptCodeGen
             }
 
             _joinTokensWith.Push(",");
-            var actualCode = functionCallToken.Actuals.Inner.Select(Visit).ToList();
+            var actualCode = functionCallToken.Actuals.Inner.Select(AsVisitor().Visit).ToList();
             _joinTokensWith.Pop();
             
             var result = $"{GetReturnPrefix(functionCallToken)}{functionName}({string.Join(',', actualCode)})";
@@ -133,79 +138,79 @@ namespace JavaScriptCodeGen
             return result;
         }
 
-        public override string Visit(NegateToken negateToken)
+        public string Visit(NegateToken negateToken)
         {
-            return $"{GetReturnPrefix(negateToken)}(-{Visit(negateToken.Token)})";
+            return $"{GetReturnPrefix(negateToken)}-{AsVisitor().Visit(negateToken.Token)}";
         }
 
-        public override string Visit(NotToken notToken)
+        public string Visit(NotToken notToken)
         {
-            return $"{GetReturnPrefix(notToken)}(!{Visit(notToken.Token)})";
+            return $"{GetReturnPrefix(notToken)}-{AsVisitor().Visit(notToken.Token)}";
         }
 
-        public override string Visit(AddToken addToken)
+        public string Visit(AddToken addToken)
         {
-            return $"{GetReturnPrefix(addToken)}({Visit(addToken.Left)} + {Visit(addToken.Right)})";
+            return $"{GetReturnPrefix(addToken)}{AsVisitor().Visit(addToken.Left)} + {AsVisitor().Visit(addToken.Right)}";
         }
 
-        public override string Visit(EqualsToken equalsToken)
+        public string Visit(EqualsToken equalsToken)
         {
-            return $"{GetReturnPrefix(equalsToken)}({Visit(equalsToken.Left)} === {Visit(equalsToken.Right)})";
+            return $"{GetReturnPrefix(equalsToken)}{AsVisitor().Visit(equalsToken.Left)} === {AsVisitor().Visit(equalsToken.Right)}";
         }
 
-        public override string Visit(NotEqualsToken notEqualsToken)
+        public string Visit(NotEqualsToken notEqualsToken)
         {
-            return $"{GetReturnPrefix(notEqualsToken)}({Visit(notEqualsToken.Left)} !== {Visit(notEqualsToken.Right)})";
+            return $"{GetReturnPrefix(notEqualsToken)}{AsVisitor().Visit(notEqualsToken.Left)} !== {AsVisitor().Visit(notEqualsToken.Right)}";
         }
 
-        public override string Visit(LessThanToken lessThanToken)
+        public string Visit(LessThanToken lessThanToken)
         {
-            return $"{GetReturnPrefix(lessThanToken)}({Visit(lessThanToken.Left)} < {Visit(lessThanToken.Right)})";
+            return $"{GetReturnPrefix(lessThanToken)}{AsVisitor().Visit(lessThanToken.Left)} < {AsVisitor().Visit(lessThanToken.Right)}";
         }
 
-        public override string Visit(LessThanEqualsToken lessThanEqualsToken)
+        public string Visit(LessThanEqualsToken lessThanEqualsToken)
         {
-            return $"{GetReturnPrefix(lessThanEqualsToken)}({Visit(lessThanEqualsToken.Left)} <= {Visit(lessThanEqualsToken.Right)})";
+            return $"{GetReturnPrefix(lessThanEqualsToken)}{AsVisitor().Visit(lessThanEqualsToken.Left)} <= {AsVisitor().Visit(lessThanEqualsToken.Right)}";
         }
 
-        public override string Visit(SubtractToken subtractToken)
+        public string Visit(SubtractToken subtractToken)
         {
-            return $"{GetReturnPrefix(subtractToken)}({Visit(subtractToken.Left)} - {Visit(subtractToken.Right)})";
+            return $"{GetReturnPrefix(subtractToken)}{AsVisitor().Visit(subtractToken.Left)} - {AsVisitor().Visit(subtractToken.Right)}";
         }
 
-        public override string Visit(DivideToken divideToken)
+        public string Visit(DivideToken divideToken)
         {
-            return $"{GetReturnPrefix(divideToken)}({Visit(divideToken.Left)} / {Visit(divideToken.Right)})";
+            return $"{GetReturnPrefix(divideToken)}{AsVisitor().Visit(divideToken.Left)} / {AsVisitor().Visit(divideToken.Right)}";
         }
 
-        public override string Visit(MultiplyToken multiplyToken)
+        public string Visit(MultiplyToken multiplyToken)
         {
-            return $"{GetReturnPrefix(multiplyToken)}({Visit(multiplyToken.Left)} * {Visit(multiplyToken.Right)})";
+            return $"{GetReturnPrefix(multiplyToken)}{AsVisitor().Visit(multiplyToken.Left)} * {AsVisitor().Visit(multiplyToken.Right)}";
         }
 
-        public override string Visit(AtomicToken atomicToken)
+        public string Visit(AtomicToken atomicToken)
         {
             return GetReturnPrefix(atomicToken) + atomicToken.Value switch
             {
                 string str => @$"""{str}""",
                 int number => number.ToString(),
                 bool boolean => boolean.ToString().ToLower(),
-                null => "null",
+                null => null,
                 UNIT_SYMBOL_VALUE => "new Unit()",
                 _ => throw new ArgumentOutOfRangeException()
             };
         }
 
-        public override string Visit(VariableToken variableToken)
+        public string Visit(VariableToken variableToken)
         {
-            return _scoped[_currentClassName].Contains(variableToken.Variable)
+            return _scoped.ContainsKey(variableToken.Variable)
                 ? $"this.{variableToken.Variable}"
                 : $"{variableToken.Variable}";
         }
 
-        public override string Visit(AccessToken accessToken)
+        public string Visit(AccessToken accessToken)
         {
-            var lhs = Visit(accessToken.Receiver);
+            var lhs = AsVisitor().Visit(accessToken.Receiver);
             _beingAccessed = true;
             var rhs = Visit(accessToken.FunctionCall);
             _beingAccessed = false;
@@ -213,18 +218,18 @@ namespace JavaScriptCodeGen
             return $"{lhs}.{rhs}";
         }
 
-        public override string Visit(InstantiationToken instantiationToken)
+        public string Visit(InstantiationToken instantiationToken)
         {
             return
-                $"new {TypeRename(instantiationToken.Class)}({string.Join(',', instantiationToken.Actuals.Inner.Select(Visit))})";
+                $"new {TypeRename(instantiationToken.Class)}({string.Join(',', instantiationToken.Actuals.Inner.Select(AsVisitor().Visit))})";
         }
 
-        public override string Visit(Formal formal)
+        public string Visit(Formal formal)
         {
             return formal.Name;
         }
 
-        public override string Visit(ClassToken classToken)
+        public string Visit(ClassToken classToken)
         {
             if (_basicTypes.Contains(classToken.Name))
             {
@@ -240,16 +245,14 @@ namespace JavaScriptCodeGen
             _joinTokensWith.Pop();
             
             _joinTokensWith.Push(";\n");
-            var insideConstructor = string.Join(";\n", new[]{$"super({actuals})"}
-                .Concat(classToken.Formals.Inner.Select(x => $"this.{x.Name} = {x.Name}"))
-                .Concat(classToken.Features.Inner.Where(x => x is not FunctionDeclToken).Select(Visit)));
+            var insideConstructor = string.Join(";\n", new[]{$"super({actuals})"}.Concat(classToken.Features.Inner.Where(x => x is not FunctionDeclToken).Select(AsVisitor().Visit)));
             _joinTokensWith.Pop();
             
-            var methods = string.Join('\n', classToken.Features.Inner.Where(x => x is FunctionDeclToken).Select(Visit));
+            var methods = string.Join('\n', classToken.Features.Inner.Where(x => x is FunctionDeclToken).Select(AsVisitor().Visit));
             
             var result =
                 $"class {TypeRename(classToken.Name)} {extendsPrefix} {{\n" +
-                $"{MakeIndent(1)}constructor{Visit(classToken.Formals)} {{\n" +
+                $"{MakeIndent(1)}constructor{AsVisitor().Visit(classToken.Formals)} {{\n" +
                 $"{insideConstructor}\n" +
                 $"{MakeIndent(1)}}}\n" +
                 $"{methods}\n" +
@@ -260,29 +263,29 @@ namespace JavaScriptCodeGen
             return result;
         }
 
-        public override string Visit(TypedArmToken typedArmToken)
+        public string Visit(TypedArmToken typedArmToken)
         {
             return $"({_returnVariable.Peek()} instanceof {TypeRename(typedArmToken.Type)} && " +
                    $"({typedArmToken.Name} = {_returnVariable.Peek()})) ? " +
-                   $"{Visit(typedArmToken.Result)}";
+                   $"{AsVisitor().Visit(typedArmToken.Result)}";
         }
 
-        public override string Visit(NullArmToken nullArmToken)
+        public string Visit(NullArmToken nullArmToken)
         {
-            return $"({_returnVariable.Peek()} === null) ? {Visit(nullArmToken.Result)}";
+            return $"({_returnVariable.Peek()} === null) ? {AsVisitor().Visit(nullArmToken.Result)}";
         }
 
-        public override string Visit(Formals formals)
+        public string Visit(Formals formals)
         {
             return $"({string.Join(',', formals.Inner.Select(Visit))})";
         }
 
-        public override string Visit(Tokens tokens)
+        public string Visit(Tokens tokens)
         {
-            return string.Join(_joinTokensWith.Peek(), tokens.Inner.Select(Visit));
+            return string.Join(_joinTokensWith.Peek(), tokens.Inner.Select(AsVisitor().Visit));
         }
 
-        public override string Visit(Classes classes)
+        public string Visit(Classes classes)
         {
             bool dumpMainCall = false;
             
@@ -342,7 +345,7 @@ namespace JavaScriptCodeGen
             return result;
         }
 
-        public override string Visit(Match match)
+        public string Visit(Match match)
         {
             var returnVar = MakeVariable();
             
@@ -351,16 +354,16 @@ namespace JavaScriptCodeGen
 
             return $"{GetReturnPrefix(match)}" +
                    $"(({returnVar}) => {{ {decls};\n" +
-                   $"return {Visit(match.Arms)} }}).bind(this)({Visit(match.Token)})";
+                   $"return {AsVisitor().Visit(match.Arms)} }}).bind(this)({AsVisitor().Visit(match.Token)})";
         }
 
-        public override string Visit(Arms arms)
+        public string Visit(Arms arms)
         {
             var result = "";
             var closing = "";
             foreach (var armToken in arms.Inner)
             {
-                result += "(" + Visit(armToken) + ": ";
+                result += "(" + AsVisitor().Visit(armToken) + ": ";
                 closing += ")";
             }
 

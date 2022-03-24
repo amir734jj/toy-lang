@@ -7,6 +7,9 @@ using static Models.Constants;
 
 namespace Semantics
 {
+    
+    
+    
     internal class SemanticsVisitor : Visitor<Unit>
     {
         private Contour<string, IToken> _variableContour = new();
@@ -197,7 +200,7 @@ namespace Semantics
             }
 
             // Make sure the type of variable declaration body is superset of static type
-            if (TypeLub(varDeclToken.Type, exprType) != varDeclToken.Type)
+            if (TypeLub(varDeclToken.LocalType, exprType) != varDeclToken.LocalType)
             {
                 return Semantics.Error(varDeclToken,
                     "Type of LHS of var decl should be a superset equals of right hand side");
@@ -211,7 +214,7 @@ namespace Semantics
             _variableContour.Update(varDeclToken.Variable, varDeclToken);
 
             // Export variable type
-            _typeContour.Update(varDeclToken, varDeclToken.Type);
+            _typeContour.Update(varDeclToken, varDeclToken.LocalType);
 
             return Unit.Instance;
         }
@@ -225,7 +228,7 @@ namespace Semantics
             Visit(functionDeclToken.Formals);
             Visit(functionDeclToken.Body);
 
-            if (functionDeclToken.Type != NOTHING_TYPE && !_hierarchy.ContainsKey(functionDeclToken.Type))
+            if (functionDeclToken.ReturnType != NOTHING_TYPE && !_hierarchy.ContainsKey(functionDeclToken.ReturnType))
             {
                 return Semantics.Error(functionDeclToken, "Static return type of function should be defined.");
             }
@@ -235,7 +238,7 @@ namespace Semantics
                 return Semantics.Error(functionDeclToken, "Return type of function should be defined.");
             }
 
-            if (TypeLub(functionDeclToken.Type, functionRetType) != functionDeclToken.Type)
+            if (TypeLub(functionDeclToken.ReturnType, functionRetType) != functionDeclToken.ReturnType)
             {
                 return Semantics.Error(functionDeclToken, "Dynamic return type of function should be superset equal of static return type.");
             }
@@ -306,6 +309,11 @@ namespace Semantics
                 }
             }
 
+            if (functionDeclToken == null)
+            {
+                return Semantics.Error(functionCallToken, "Function decl is not defined.");
+            }
+
             // Make sure count of formals and actuals are equal
             if (functionCallToken.Actuals.Inner.Count != functionDeclToken.Formals.Inner.Count)
             {
@@ -341,7 +349,7 @@ namespace Semantics
             }
 
             // Type of function call is the static type of function decl
-            _typeContour.Update(functionCallToken, functionDeclToken.Type);
+            _typeContour.Update(functionCallToken, functionDeclToken.ReturnType);
 
             return Unit.Instance;
         }
@@ -1175,6 +1183,30 @@ namespace Semantics
                     return Semantics.Error(classToken, "Extending a class that is not defined.");
                 }
             }
+
+            bool Dfs(ClassToken classToken, IReadOnlySet<string> visited)
+            {
+                var children = _hierarchy
+                    .Where(x => x.Value != classToken.Name)
+                    .Select(x => x.Key)
+                    .Select(x => classes.Inner.First(y => y.Name == x))
+                    .ToList();
+
+                if (visited.Contains(classToken.Name))
+                {
+                    Semantics.Error(classToken, $"Cycle detected in class hierarchy while checking class  {classToken.Name}");
+
+                    return false;
+                }
+
+                return children.Select(x => Dfs(x, visited.Concat(new[] { classToken.Name }).ToHashSet()))
+                    .Aggregate(true, (a, b) => a && b);
+            }
+
+            if (!Dfs(classes.Inner.First(x => x.Name == "Any"), new HashSet<string>()))
+            {
+                return Unit.Instance;
+            }
             
             // Collect methods
             var fixedPointReached = false;
@@ -1364,6 +1396,7 @@ namespace Semantics
             if (t2 == NOTHING_TYPE) return t1;
 
             // _ LUB String => String
+            // ReSharper disable once ConvertIfStatementToSwitchStatement
             if (t1 == STRING_TYPE && t2 == ANY_TYPE) return STRING_TYPE;
             if (t1 == ANY_TYPE && t2 == STRING_TYPE) return STRING_TYPE;
 

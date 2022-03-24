@@ -13,6 +13,11 @@ namespace Models
         public Guid Id { get; }
     }
 
+    public interface IExpression
+    {
+        public ClassToken Type { get; set; }
+    }
+
     public abstract class Token<T> : MemberwiseEquatable<T>, IToken 
     {
         public Token()
@@ -61,11 +66,12 @@ namespace Models
 
     #region Singular
 
-    public class NativeToken : Token<NativeToken>
+    public class NativeToken : Token<NativeToken>, IExpression
     {
+        public ClassToken Type { get; set; }
     }
 
-    public class AssignToken : Token<AssignToken>
+    public class AssignToken : Token<AssignToken>, IExpression
     {
         public AssignToken(string variable, IToken body)
         {
@@ -75,9 +81,11 @@ namespace Models
 
         public string Variable { get; }
         public IToken Body { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class WhileToken : Token<WhileToken>
+    public class WhileToken : Token<WhileToken>, IExpression
     {
         public WhileToken(IToken condition, IToken body)
         {
@@ -87,9 +95,11 @@ namespace Models
 
         public IToken Condition { get; }
         public IToken Body { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class CondToken : Token<CondToken>
+    public class CondToken : Token<CondToken>, IExpression
     {
         public CondToken(IToken condition, IToken ifToken, IToken elseToken)
         {
@@ -101,41 +111,46 @@ namespace Models
         public IToken Condition { get; }
         public IToken IfToken { get; }
         public IToken ElseToken { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class VarDeclToken : Token<VarDeclToken>
+    public class VarDeclToken : Token<VarDeclToken>, IExpression
     {
-        public VarDeclToken(string variable, string type, IToken body)
+        public VarDeclToken(string variable, string localType, IToken body)
         {
             Variable = variable;
-            Type = type;
+            LocalType = localType;
             Body = body;
         }
 
         public string Variable { get; }
-        public string Type { get; }
+        
+        public string LocalType { get; }
         public IToken Body { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
     public class FunctionDeclToken : Token<FunctionDeclToken>
     {
-        public FunctionDeclToken(bool @override, string name, Formals formals, string type, IToken body)
+        public FunctionDeclToken(bool @override, string name, Formals formals, string returnType, IToken body)
         {
             Override = @override;
             Name = name;
             Formals = formals;
-            Type = type;
+            ReturnType = returnType;
             Body = body;
         }
 
         public bool Override { get; }
         public string Name { get; }
         public Formals Formals { get; }
-        public string Type { get; }
+        public string ReturnType { get; }
         public IToken Body { get; }
     }
 
-    public class BlockToken : Token<BlockToken>
+    public class BlockToken : Token<BlockToken>, IExpression
     {
         public BlockToken(Tokens tokens)
         {
@@ -143,9 +158,11 @@ namespace Models
         }
 
         public Tokens Tokens { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class FunctionCallToken : Token<FunctionCallToken>
+    public class FunctionCallToken : Token<FunctionCallToken>, IExpression
     {
         public FunctionCallToken(string name, Tokens actuals)
         {
@@ -155,9 +172,11 @@ namespace Models
 
         public string Name { get; }
         public Tokens Actuals { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class NegateToken : Token<NegateToken>
+    public class NegateToken : Token<NegateToken>, IExpression
     {
         public NegateToken(IToken token)
         {
@@ -165,9 +184,11 @@ namespace Models
         }
 
         public IToken Token { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class NotToken : Token<NotToken>
+    public class NotToken : Token<NotToken>, IExpression
     {
         public NotToken(IToken token)
         {
@@ -175,9 +196,11 @@ namespace Models
         }
 
         public IToken Token { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class AddToken : Token<AddToken>
+    public class AddToken : Token<AddToken>, IExpression
     {
         public AddToken(IToken left, IToken right)
         {
@@ -187,9 +210,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class EqualsToken : Token<EqualsToken>
+    public class EqualsToken : Token<EqualsToken>, IExpression
     {
         public EqualsToken(IToken left, IToken right)
         {
@@ -199,9 +224,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class NotEqualsToken : Token<NotEqualsToken>
+    public class NotEqualsToken : Token<NotEqualsToken>, IExpression
     {
         public NotEqualsToken(IToken left, IToken right)
         {
@@ -211,9 +238,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class AndToken : Token<AndToken>
+    public class AndToken : Token<AndToken>, IExpression
     {
         public AndToken(IToken left, IToken right)
         {
@@ -223,9 +252,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class OrToken : Token<OrToken>
+    public class OrToken : Token<OrToken>, IExpression
     {
         public OrToken(IToken left, IToken right)
         {
@@ -235,9 +266,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class LessThanToken : Token<LessThanToken>
+    public class LessThanToken : Token<LessThanToken>, IExpression
     {
         public LessThanToken(IToken left, IToken right)
         {
@@ -247,9 +280,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class LessThanEqualsToken : Token<LessThanEqualsToken>
+    public class LessThanEqualsToken : Token<LessThanEqualsToken>, IExpression
     {
         public LessThanEqualsToken(IToken left, IToken right)
         {
@@ -259,9 +294,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class SubtractToken : Token<SubtractToken>
+    public class SubtractToken : Token<SubtractToken>, IExpression
     {
         public SubtractToken(IToken left, IToken right)
         {
@@ -271,9 +308,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class DivideToken : Token<DivideToken>
+    public class DivideToken : Token<DivideToken>, IExpression
     {
         public DivideToken(IToken left, IToken right)
         {
@@ -283,9 +322,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class MultiplyToken : Token<MultiplyToken>
+    public class MultiplyToken : Token<MultiplyToken>, IExpression
     {
         public MultiplyToken(IToken left, IToken right)
         {
@@ -295,9 +336,11 @@ namespace Models
 
         public IToken Left { get; }
         public IToken Right { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class AtomicToken : Token<AtomicToken>
+    public class AtomicToken : Token<AtomicToken>, IExpression
     {
         public AtomicToken(IConvertible value)
         {
@@ -305,9 +348,11 @@ namespace Models
         }
 
         public IConvertible Value { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class VariableToken : Token<VariableToken>
+    public class VariableToken : Token<VariableToken>, IExpression
     {
         public VariableToken(string variable)
         {
@@ -315,9 +360,11 @@ namespace Models
         }
 
         public string Variable { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class AccessToken : Token<AccessToken>
+    public class AccessToken : Token<AccessToken>, IExpression
     {
         public AccessToken(IToken receiver, FunctionCallToken functionCall)
         {
@@ -327,9 +374,11 @@ namespace Models
 
         public IToken Receiver { get; }
         public FunctionCallToken FunctionCall { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
-    public class InstantiationToken : Token<InstantiationToken>
+    public class InstantiationToken : Token<InstantiationToken>, IExpression
     {
         public InstantiationToken(string @class, Tokens actuals)
         {
@@ -339,6 +388,8 @@ namespace Models
 
         public string Class { get; }
         public Tokens Actuals { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
     public class Formal : Token<Formal>
@@ -399,7 +450,7 @@ namespace Models
         public IToken Result { get; }
     }
 
-    public class Match : Token<Match>
+    public class Match : Token<Match>, IExpression
     {
         public Match(IToken token, Arms arms)
         {
@@ -409,6 +460,8 @@ namespace Models
 
         public IToken Token { get; }
         public Arms Arms { get; }
+        
+        public ClassToken Type { get; set; }
     }
 
     #endregion

@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstJsonDump", "AstJsonDump\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "Playground\Playground.csproj", "{2B858B30-1A7B-4E63-9276-7A4748026EFD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCodeGen", "CCodeGen\CCodeGen.csproj", "{B331AB1F-6B3D-4488-B21A-71DD829F1738}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,9 @@ Global
 		{2B858B30-1A7B-4E63-9276-7A4748026EFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B858B30-1A7B-4E63-9276-7A4748026EFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B858B30-1A7B-4E63-9276-7A4748026EFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B331AB1F-6B3D-4488-B21A-71DD829F1738}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B331AB1F-6B3D-4488-B21A-71DD829F1738}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B331AB1F-6B3D-4488-B21A-71DD829F1738}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B331AB1F-6B3D-4488-B21A-71DD829F1738}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

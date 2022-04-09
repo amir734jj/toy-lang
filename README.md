@@ -1,6 +1,8 @@
 # toy-lang
 Toy programming language: my attempt at creating a new toy/experimental language in just 2 weeks.
 
+> **Notice: This project was a great learning experince, I am abandening this project to work on a scripting alternative to ToyLang**
+
 Please check out the Wiki page
 
 ```scala
